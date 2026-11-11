@@ -1,0 +1,89 @@
+.layers {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid var(--line);
+}
+
+.middle {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border: 1px dashed var(--line);
+}
+
+.row,
+.core {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 24px;
+}
+
+.core {
+  padding: 24px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.tag {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tagAdapters {
+  flex: 0 0 130px;
+}
+
+.tagPorts {
+  flex: 0 0 106px;
+}
+
+.tagDomain {
+  flex: 0 0 82px;
+}
+
+.coreTag {
+  color: inherit;
+  font-weight: 500;
+}
+
+.text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.core .text {
+  flex-basis: 240px;
+}
+
+.title {
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.coreTitle {
+  font-weight: 700;
+  font-size: 30px;
+}
+
+.copy {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.coreCopy {
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .tagAdapters,
+  .tagPorts,
+  .tagDomain {
+    flex-basis: 100%;
+  }
+}

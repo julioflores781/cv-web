@@ -1,0 +1,48 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  border-top: 1px solid var(--ink);
+}
+
+.step {
+  position: relative;
+  padding: 28px 24px 0 0;
+}
+
+.marker,
+.markerFirst {
+  position: absolute;
+  left: 0;
+}
+
+.markerFirst {
+  top: -7px;
+  width: 13px;
+  height: 13px;
+  background: var(--accent);
+}
+
+.marker {
+  top: -6px;
+  width: 1px;
+  height: 11px;
+  background: var(--ink);
+}
+
+.number {
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+}
+
+.title {
+  margin: 8px 0 6px;
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.text {
+  color: var(--muted);
+  font-size: 15px;
+}

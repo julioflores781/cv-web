@@ -1,0 +1,133 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "mini",
+    "version": "0"
+  },
+  "paths": {
+    "/api/v1/resume": {
+      "get": {
+        "operationId": "getResume",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contact/messages": {
+      "post": {
+        "operationId": "postMessage",
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Note"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/services": {
+      "get": {
+        "operationId": "getServices",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "operationId": "getProjects",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/architecture": {
+      "get": {
+        "operationId": "getArchitecture",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Note": {
+        "type": "object",
+        "required": [
+          "a"
+        ],
+        "properties": {
+          "a": {
+            "type": "string",
+            "description": "Single line example",
+            "example": "SENTINEL-ONE-LINE"
+          },
+          "b": {
+            "type": "object",
+            "description": "Multi line example",
+            "properties": {
+              "x": {
+                "type": "string"
+              },
+              "y": {
+                "type": "string"
+              }
+            },
+            "example": {
+              "x": "SENTINEL-MULTI-X",
+              "y": "SENTINEL-MULTI-Y"
+            }
+          },
+          "c": {
+            "type": "string",
+            "description": "After the examples"
+          }
+        }
+      }
+    }
+  }
+}
