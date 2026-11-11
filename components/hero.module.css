@@ -1,0 +1,55 @@
+.hero {
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: var(--header-h);
+}
+
+.inner {
+  max-width: 1280px;
+  box-sizing: content-box; /* the design's 1280px is the content width: 1328px with its 24px side padding */
+  margin: 0 auto;
+  padding: 72px 24px 80px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 56px;
+}
+
+.copy {
+  flex: 1 1 480px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: clamp(56px, 8.4vw, 124px);
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+.lead {
+  max-width: 540px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .inner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy {
+    flex: 0 0 auto;
+  }
+}
