@@ -1,6 +1,6 @@
 # Estado de la sesión
 
-web-redesign (ronda 4, diseño v2): 6/6 slugs implementados y APPROVED por reviewer (referencia, base, hexagon, contenido, pdf, paridad). Pendiente: confirmación humana del fondo hexagonal/tipografía/color (PA-A7) y "cerrá <slug>" por slug. Nada commiteado.
+web-redesign (ronda 4, diseño v2): CERRADO (6/6 slugs, commit e7cbadd, merge 8816e1d en develop; publicado en julioflores781/cv-web). Pendiente solo la revisión visual final del humano (PA-A7) y el plan web-runtime.
 
 web-redesign-pdf (5/6): implementado, lint/typecheck/test/build verdes; pendiente review. `progress/web-redesign-pdf/impl.md`.
 
