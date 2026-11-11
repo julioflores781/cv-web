@@ -1,0 +1,16 @@
+.footer {
+  border-top: 1px solid var(--line);
+}
+
+.inner {
+  max-width: 1280px;
+  box-sizing: content-box; /* the design's 1280px is the content width: 1328px with its 24px side padding */
+  margin: 0 auto;
+  padding: 28px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}

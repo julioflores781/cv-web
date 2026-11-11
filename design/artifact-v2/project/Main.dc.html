@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Julio Flores — Web personal</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+:root,.plano{--bg:#0F2A1F;--bg2:#0B2118;--surface:#17382A;--node:#1F4D39;--ink:#F1F6EE;--muted:#B5CABB;--line:rgba(255,255,255,.3);--line2:rgba(255,255,255,.14);--field:#0B2118}
+.obra{--bg:#F4F3EC;--bg2:#E9E8DE;--surface:#FFFFFF;--node:#FFFFFF;--ink:#12382A;--muted:#486255;--line:rgba(18,56,42,.32);--line2:rgba(18,56,42,.12);--field:#FFFFFF}
+a{color:inherit}a:hover{color:inherit}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;text-transform:uppercase}
+.m{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+.hex{clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.gridbg{background-image:url(/_blob/5a2024960d66cec44b1431a7988db8fe);background-size:84px 48.5px}
+.obra .gridbg{background-image:url(/_blob/348ba5771fda6fc3fe32032823301d3e)}
+.node{transition:transform .2s ease}
+.node:hover{transform:translate(-50%,-50%) scale(1.07)!important}
+.node:focus-visible{background:var(--ink)!important;color:var(--bg)!important;outline:none}
+:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.flow{stroke-dasharray:2 2;animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-8}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}.node{transition:none}}
+</style>
+</helmet>
+
+<div class="{{modeClass}}" style="min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 16px; line-height: 1.6">
+
+  <!-- NAV -->
+  <header style="position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line)">
+    <nav style="max-width: 1280px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+      <a href="#inicio" style="display: flex; align-items: center; gap: 12px; text-decoration: none; min-height: 44px">
+        <span class="hex d" style="width: 38px; height: 44px; background: {{accent}}; color: #0A2016; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px">JF</span>
+        <span class="d" style="font-weight: 600; font-size: 24px; letter-spacing: 0.02em">Julio Flores</span>
+      </a>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px">
+        <a class="m" href="#proyectos" style="text-decoration: none; font-size: 14px; min-height: 44px; display: inline-flex; align-items: center">proyectos</a>
+        <a class="m" href="#contacto" style="text-decoration: none; font-size: 14px; min-height: 44px; display: inline-flex; align-items: center">contacto</a>
+        <div role="group" aria-label="Modo de la web" style="display: flex; border: 1px solid var(--line)">
+          <button type="button" class="m" onClick="{{setPerfil}}" aria-pressed="{{isPerfil}}" style="{{perfilBtn}}">Perfil</button>
+          <button type="button" class="m" onClick="{{setServicios}}" aria-pressed="{{isServicios}}" style="{{serviciosBtn}}">Servicios</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section id="inicio" class="gridbg" style="border-bottom: 1px solid var(--line)">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 72px 24px 80px; display: flex; flex-wrap: wrap; align-items: center; gap: 56px">
+      <div style="flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 28px">
+        <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">{{eyebrow}}</p>
+        <sc-if value="{{isPerfil}}" hint-placeholder-val="{{ true }}">
+          <h1 class="d" style="margin: 0; font-weight: 700; font-size: clamp(56px, 8.4vw, 124px); line-height: 0.9; letter-spacing: -0.005em; text-wrap: balance">Construyo el núcleo que hace que todo funcione.</h1>
+          <p style="margin: 0; max-width: 540px; font-size: 18px; color: var(--muted)">Desarrollador full-stack senior con foco en backend y arquitectura hexagonal. Desde 2017 diseñando sistemas para el sector sanitario, donde los fallos no son una opción.</p>
+        </sc-if>
+        <sc-if value="{{isServicios}}" hint-placeholder-val="{{ false }}">
+          <h1 class="d" style="margin: 0; font-weight: 700; font-size: clamp(56px, 8.4vw, 124px); line-height: 0.9; letter-spacing: -0.005em; text-wrap: balance">Tu producto, con una arquitectura que aguanta.</h1>
+          <p style="margin: 0; max-width: 540px; font-size: 18px; color: var(--muted)">Desarrollo webs, APIs y plataformas modernas de principio a fin. Código limpio, desplegado y preparado para crecer contigo.</p>
+        </sc-if>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px">
+          <a href="{{ctaHref}}" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 28px; background: {{accent}}; color: #0A2016; font-weight: 600; text-decoration: none">{{ctaLabel}}</a>
+          <a href="#proyectos" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 28px; border: 1px solid var(--line); background: var(--bg); font-weight: 500; text-decoration: none">Ver proyectos</a>
+        </div>
+      </div>
+
+      <!-- PLANO HEXAGONAL -->
+      <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 16px">
+        <div style="position: relative; width: 100%; max-width: 540px; aspect-ratio: 1 / 1">
+          <svg viewBox="0 0 100 100" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink)">
+            <polygon points="50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27" fill="none" stroke="currentColor" stroke-opacity="0.2" stroke-width="0.25"></polygon>
+            <polygon points="50,12 82.9,31 82.9,69 50,88 17.1,69 17.1,31" fill="none" stroke="currentColor" stroke-opacity="0.55" stroke-width="0.3"></polygon>
+            <polygon points="50,26 70.8,38 70.8,62 50,74 29.2,62 29.2,38" fill="none" stroke="currentColor" stroke-opacity="0.55" stroke-width="0.3" stroke-dasharray="1.2 1.2"></polygon>
+            <line x1="50" y1="50" x2="50" y2="12" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <line x1="50" y1="50" x2="82.9" y2="31" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <line x1="50" y1="50" x2="82.9" y2="69" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <line x1="50" y1="50" x2="50" y2="88" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <line x1="50" y1="50" x2="17.1" y2="69" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <line x1="50" y1="50" x2="17.1" y2="31" stroke="currentColor" stroke-opacity="0.35" stroke-width="0.25"></line>
+            <rect x="49" y="25" width="2" height="2" fill="currentColor"></rect>
+            <rect x="69.8" y="37" width="2" height="2" fill="currentColor"></rect>
+            <rect x="69.8" y="61" width="2" height="2" fill="currentColor"></rect>
+            <rect x="49" y="73" width="2" height="2" fill="currentColor"></rect>
+            <rect x="28.2" y="61" width="2" height="2" fill="currentColor"></rect>
+            <rect x="28.2" y="37" width="2" height="2" fill="currentColor"></rect>
+            <line class="flow" x1="{{sx}}" y1="{{sy}}" x2="50" y2="50" stroke="{{accent}}" stroke-width="0.9"></line>
+          </svg>
+          <div class="hex" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 30%; aspect-ratio: 0.866 / 1; background: {{accent}}; color: #0A2016; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px">
+            <span class="m" style="font-size: 11px; font-weight: 500">{{coreTag}}</span>
+            <span class="d" style="font-weight: 700; font-size: clamp(18px, 2.4vw, 30px); line-height: 1">{{coreLabel}}</span>
+          </div>
+          <sc-for list="{{nodes}}" as="n" hint-placeholder-count="6">
+            <button type="button" class="hex node" onClick="{{n.pick}}" aria-pressed="{{n.on}}" style="{{n.style}}">{{n.label}}</button>
+          </sc-for>
+        </div>
+        <div class="m" style="width: 100%; max-width: 540px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; color: var(--muted)">
+          <span>── adaptadores</span>
+          <span>- - puertos</span>
+          <span>■ contrato</span>
+          <span>toca un nodo para trazar la llamada</span>
+        </div>
+        <div style="width: 100%; max-width: 540px; box-sizing: border-box; border: 1px solid var(--line); background: var(--bg); display: flex; flex-wrap: wrap">
+          <div class="m" style="flex: 0 0 auto; padding: 14px 16px; border-right: 1px solid var(--line); font-size: 12px; color: var(--muted)">{{selIndex}}</div>
+          <div style="flex: 1 1 260px; min-width: 0; padding: 12px 16px; display: flex; flex-direction: column; gap: 2px">
+            <span class="d" style="font-weight: 600; font-size: 22px; line-height: 1.1">{{selLabel}}</span>
+            <span style="font-size: 15px; color: var(--muted)">{{selText}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAJETÍN -->
+    <div style="border-top: 1px solid var(--line); background: var(--bg)">
+      <dl style="max-width: 1280px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr))">
+        <div style="padding: 16px 16px 16px 0; display: flex; flex-direction: column; gap: 2px">
+          <dt class="m" style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">Autor</dt>
+          <dd style="margin: 0; font-weight: 500">Julio Flores</dd>
+        </div>
+        <div style="padding: 16px; border-left: 1px solid var(--line2); display: flex; flex-direction: column; gap: 2px">
+          <dt class="m" style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">Especialidad</dt>
+          <dd style="margin: 0; font-weight: 500">Backend · arquitectura hexagonal</dd>
+        </div>
+        <div style="padding: 16px; border-left: 1px solid var(--line2); display: flex; flex-direction: column; gap: 2px">
+          <dt class="m" style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">En activo desde</dt>
+          <dd style="margin: 0; font-weight: 500">2017 · sector sanitario</dd>
+        </div>
+        <div style="padding: 16px; border-left: 1px solid var(--line2); display: flex; flex-direction: column; gap: 2px">
+          <dt class="m" style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">Ubicación</dt>
+          <dd style="margin: 0; font-weight: 500">España</dd>
+        </div>
+        <div style="padding: 16px; border-left: 1px solid var(--line2); display: flex; flex-direction: column; gap: 2px">
+          <dt class="m" style="font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">Hoja</dt>
+          <dd style="margin: 0; font-weight: 500">{{hoja}}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- MODO PERFIL -->
+  <sc-if value="{{isPerfil}}" hint-placeholder-val="{{ true }}">
+    <section style="border-bottom: 1px solid var(--line)">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-wrap: wrap; gap: 56px">
+        <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+          <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">01 / trayectoria</p>
+          <h2 class="d" style="margin: 0; font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 0.95; text-wrap: balance">Ocho años en sistemas donde la fiabilidad importa.</h2>
+        </div>
+        <ol style="flex: 2 1 520px; min-width: 0; margin: 0; padding: 0 0 0 28px; list-style: none; display: flex; flex-direction: column; border-left: 1px solid var(--line)">
+          <li style="position: relative; display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 0 0 32px; border-bottom: 1px solid var(--line2)">
+            <span aria-hidden="true" style="position: absolute; left: -35px; top: 6px; width: 13px; height: 13px; background: {{accent}}"></span>
+            <span class="m" style="flex: 0 0 140px; font-size: 14px; color: var(--muted)">2017 — hoy</span>
+            <div style="flex: 1 1 300px; min-width: 0">
+              <h3 class="d" style="margin: 0 0 6px; font-weight: 600; font-size: 28px; line-height: 1.05">Full Stack Developer · Sale &amp; Brick</h3>
+              <p style="margin: 0; color: var(--muted)">Plataformas para el sector sanitario. Backend con Quarkus y NestJS, autenticación con Auth0, tiempo real con WebSocket y frontends en React y Vue. [DESCRIBE TUS LOGROS PRINCIPALES]</p>
+            </div>
+          </li>
+          <li style="position: relative; display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 32px 0; border-bottom: 1px solid var(--line2)">
+            <span aria-hidden="true" style="position: absolute; left: -35px; top: 38px; width: 11px; height: 11px; border: 1px solid var(--ink); background: var(--bg)"></span>
+            <span class="m" style="flex: 0 0 140px; font-size: 14px; color: var(--muted)">[AÑOS]</span>
+            <div style="flex: 1 1 300px; min-width: 0">
+              <h3 class="d" style="margin: 0 0 6px; font-weight: 600; font-size: 28px; line-height: 1.05">[PUESTO ANTERIOR · EMPRESA]</h3>
+              <p style="margin: 0; color: var(--muted)">[DESCRIPCIÓN BREVE]</p>
+            </div>
+          </li>
+          <li style="position: relative; display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 32px 0 0">
+            <span aria-hidden="true" style="position: absolute; left: -35px; top: 38px; width: 11px; height: 11px; border: 1px solid var(--ink); background: var(--bg)"></span>
+            <span class="m" style="flex: 0 0 140px; font-size: 14px; color: var(--muted)">[AÑOS]</span>
+            <div style="flex: 1 1 300px; min-width: 0">
+              <h3 class="d" style="margin: 0 0 6px; font-weight: 600; font-size: 28px; line-height: 1.05">[FORMACIÓN]</h3>
+              <p style="margin: 0; color: var(--muted)">[CENTRO Y TITULACIÓN]</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section style="border-bottom: 1px solid var(--line); background: var(--bg2)">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start">
+        <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+          <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">02 / arquitectura</p>
+          <h2 class="d" style="margin: 0; font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 0.95">Cómo pienso un sistema.</h2>
+          <p style="margin: 0; max-width: 420px; color: var(--muted)">Sección A–A′ del hexágono: tres capas, de fuera hacia dentro. Lo de fuera se cambia; lo de dentro se protege.</p>
+          <a href="#contacto" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border: 1px solid var(--line); text-decoration: none; font-weight: 500; margin-top: 8px">Descargar CV (PDF)</a>
+        </div>
+        <!-- SECCIÓN A–A′: capas anidadas -->
+        <div style="flex: 2 1 520px; min-width: 0; border: 1px solid var(--line); padding: 24px; display: flex; flex-direction: column; gap: 20px">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline">
+            <span class="m" style="flex: 0 0 130px; font-size: 13px; color: var(--muted)">adaptadores</span>
+            <div style="flex: 1 1 280px; min-width: 0">
+              <h3 class="d" style="margin: 0 0 4px; font-weight: 600; font-size: 26px; line-height: 1.05">Tecnología intercambiable</h3>
+              <p style="margin: 0; color: var(--muted); font-size: 15px">Prisma, TypeORM, Auth0, WebSocket, Docker: piezas que se conectan, no que atan.</p>
+            </div>
+          </div>
+          <div style="border: 1px dashed var(--line); padding: 24px; display: flex; flex-direction: column; gap: 20px">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline">
+              <span class="m" style="flex: 0 0 106px; font-size: 13px; color: var(--muted)">puertos</span>
+              <div style="flex: 1 1 260px; min-width: 0">
+                <h3 class="d" style="margin: 0 0 4px; font-weight: 600; font-size: 26px; line-height: 1.05">Contratos claros</h3>
+                <p style="margin: 0; color: var(--muted); font-size: 15px">APIs tipadas con Java 17+ y TypeScript, fáciles de probar y de cambiar.</p>
+              </div>
+            </div>
+            <div style="background: {{accent}}; color: #0A2016; padding: 24px; display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline">
+              <span class="m" style="flex: 0 0 82px; font-size: 13px; font-weight: 500">dominio</span>
+              <div style="flex: 1 1 240px; min-width: 0">
+                <h3 class="d" style="margin: 0 0 4px; font-weight: 700; font-size: 30px; line-height: 1.05">El negocio, en el centro</h3>
+                <p style="margin: 0; font-size: 15px">Arquitectura hexagonal: la lógica no depende del framework ni de la base de datos.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- MODO SERVICIOS -->
+  <sc-if value="{{isServicios}}" hint-placeholder-val="{{ false }}">
+    <section style="border-bottom: 1px solid var(--line)">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 40px">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+            <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">01 / servicios</p>
+            <h2 class="d" style="margin: 0; font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 0.95">Qué puedo construir para ti.</h2>
+          </div>
+          <p style="margin: 0; max-width: 380px; color: var(--muted)">Marca los bloques que necesitas y monta tu encargo. La selección viaja contigo hasta el formulario.</p>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
+          <div style="flex: 2 1 520px; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 16px">
+            <sc-for list="{{services}}" as="s" hint-placeholder-count="4">
+              <button type="button" onClick="{{s.toggle}}" aria-pressed="{{s.on}}" style="{{s.style}}">
+                <span class="m" style="display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted)"><span>{{s.code}}</span><span style="{{s.markStyle}}">{{s.mark}}</span></span>
+                <span class="d" style="display: block; font-weight: 600; font-size: 30px; line-height: 1">{{s.title}}</span>
+                <span style="display: block; font-size: 15px; color: var(--muted); flex-grow: 1">{{s.text}}</span>
+                <span class="m" style="display: block; font-size: 14px; font-weight: 500">{{s.price}}</span>
+              </button>
+            </sc-for>
+          </div>
+          <aside style="flex: 1 1 300px; min-width: 0; background: var(--ink); color: var(--bg); padding: 28px; display: flex; flex-direction: column; gap: 16px">
+            <p class="m" style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em">Tu encargo</p>
+            <sc-if value="{{hasPicks}}" hint-placeholder-val="{{ true }}">
+              <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column">
+                <sc-for list="{{picked}}" as="p" hint-placeholder-count="1">
+                  <li class="d" style="padding: 10px 0; border-bottom: 1px solid currentColor; font-weight: 600; font-size: 26px; line-height: 1.05">{{p.title}}</li>
+                </sc-for>
+              </ul>
+            </sc-if>
+            <sc-if value="{{noPicks}}" hint-placeholder-val="{{ false }}">
+              <p style="margin: 0; font-size: 15px">Aún no has marcado ningún bloque. Elige al menos uno, o escríbeme directamente y lo definimos juntos.</p>
+            </sc-if>
+            <p style="margin: 0; font-size: 15px; flex-grow: 1">Te respondo con una propuesta en menos de 48 horas: arquitectura, alcance, plazos y precio cerrados.</p>
+            <a href="#contacto" style="display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; background: {{accent}}; color: #0A2016; font-weight: 600; text-decoration: none">Pedir presupuesto</a>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section style="border-bottom: 1px solid var(--line); background: var(--bg2)">
+      <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 48px">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+          <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">02 / proceso</p>
+          <h2 class="d" style="margin: 0; font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 0.95">Cómo trabajamos.</h2>
+        </div>
+        <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); border-top: 1px solid var(--ink)">
+          <li style="position: relative; padding: 28px 24px 0 0">
+            <span aria-hidden="true" style="position: absolute; left: 0; top: -7px; width: 13px; height: 13px; background: {{accent}}"></span>
+            <span class="d" style="font-weight: 700; font-size: 56px; line-height: 1">01</span>
+            <h3 class="d" style="margin: 8px 0 6px; font-weight: 600; font-size: 26px; line-height: 1.05">Descubrimiento</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">Una llamada para entender el problema y el objetivo.</p>
+          </li>
+          <li style="position: relative; padding: 28px 24px 0 0">
+            <span aria-hidden="true" style="position: absolute; left: 0; top: -6px; width: 1px; height: 11px; background: var(--ink)"></span>
+            <span class="d" style="font-weight: 700; font-size: 56px; line-height: 1">02</span>
+            <h3 class="d" style="margin: 8px 0 6px; font-weight: 600; font-size: 26px; line-height: 1.05">Propuesta</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">Arquitectura, alcance, plazos y precio cerrados.</p>
+          </li>
+          <li style="position: relative; padding: 28px 24px 0 0">
+            <span aria-hidden="true" style="position: absolute; left: 0; top: -6px; width: 1px; height: 11px; background: var(--ink)"></span>
+            <span class="d" style="font-weight: 700; font-size: 56px; line-height: 1">03</span>
+            <h3 class="d" style="margin: 8px 0 6px; font-weight: 600; font-size: 26px; line-height: 1.05">Desarrollo</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">Entregas cortas que puedes ver y probar.</p>
+          </li>
+          <li style="position: relative; padding: 28px 24px 0 0">
+            <span aria-hidden="true" style="position: absolute; left: 0; top: -6px; width: 1px; height: 11px; background: var(--ink)"></span>
+            <span class="d" style="font-weight: 700; font-size: 56px; line-height: 1">04</span>
+            <h3 class="d" style="margin: 8px 0 6px; font-weight: 600; font-size: 26px; line-height: 1.05">Lanzamiento</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">Despliegue, documentación y soporte posterior.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- PROYECTOS -->
+  <section id="proyectos" style="border-bottom: 1px solid var(--line)">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-direction: column; gap: 40px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+        <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+          <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">03 / proyectos</p>
+          <h2 class="d" style="margin: 0; font-weight: 600; font-size: clamp(40px, 5vw, 64px); line-height: 0.95">Webs en producción.</h2>
+        </div>
+        <p style="margin: 0; max-width: 380px; color: var(--muted)">Cada caso: el problema, la arquitectura elegida y el resultado.</p>
+      </div>
+
+      <!-- CASO DESTACADO: PADELHUB -->
+      <article style="border: 1px solid var(--line); background: var(--surface); display: flex; flex-wrap: wrap">
+        <div style="flex: 1 1 480px; min-width: 0; box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 24px">
+          <div class="m" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px">
+            <span style="padding: 4px 10px; background: var(--ink); color: var(--bg); font-weight: 500">EN PRODUCCIÓN</span>
+            <span style="color: var(--muted)">web + app móvil</span>
+          </div>
+          <h3 class="d" style="margin: 0; font-weight: 700; font-size: clamp(56px, 7vw, 104px); line-height: 0.88">PadelHub</h3>
+          <p style="margin: 0; font-size: 18px; color: var(--muted)">Plataforma de gestión de torneos de pádel. Los administradores crean y gestionan torneos; los jugadores se unen a clubes, se inscriben, pagan y comparten torneos con sus amigos.</p>
+          <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); border-top: 1px solid var(--line2)">
+            <li style="padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line2)">
+              <p class="m" style="margin: 0 0 2px; font-size: 12px; color: var(--muted)">roles</p>
+              <p style="margin: 0; font-size: 15px">Perfil de administrador de torneos y de jugador</p>
+            </li>
+            <li style="padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line2)">
+              <p class="m" style="margin: 0 0 2px; font-size: 12px; color: var(--muted)">pagos</p>
+              <p style="margin: 0; font-size: 15px">Inscripciones cobradas con Stripe</p>
+            </li>
+            <li style="padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line2)">
+              <p class="m" style="margin: 0 0 2px; font-size: 12px; color: var(--muted)">tiempo real</p>
+              <p style="margin: 0; font-size: 15px">Chat entre amigos y salas de torneo, grupo y partido; notificaciones por Socket</p>
+            </li>
+            <li style="padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line2)">
+              <p class="m" style="margin: 0 0 2px; font-size: 12px; color: var(--muted)">arquitectura</p>
+              <p style="margin: 0; font-size: 15px">NestJS hexagonal + Next.js, ambos en TypeScript estricto</p>
+            </li>
+          </ul>
+          <div style="display: flex; flex-wrap: wrap; gap: 12px">
+            <a href="https://padelhub.floreslab.dev/share/69f755af69dc75fbb616141d" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px; background: {{accent}}; color: #0A2016; font-weight: 600; text-decoration: none">Ver un torneo compartido</a>
+            <a href="https://padelhub.floreslab.dev" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 24px; border: 1px solid var(--line); font-weight: 500; text-decoration: none">Abrir PadelHub</a>
+          </div>
+        </div>
+
+        <!-- PLANO DEL SISTEMA + CAPTURA -->
+        <div class="gridbg" style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; padding: 40px; background-color: var(--bg); border-left: 1px solid var(--line2); display: flex; flex-direction: column; gap: 24px">
+          <p class="m" style="margin: 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em">Plano del sistema</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); gap: 12px; align-items: stretch">
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div style="flex: 1; padding: 14px; border: 1px solid var(--line); background: var(--bg)">
+                <p class="m" style="margin: 0 0 2px; font-size: 11px; color: var(--muted)">entrada</p>
+                <p style="margin: 0; font-weight: 500; font-size: 15px">Next.js · web</p>
+              </div>
+              <div style="flex: 1; padding: 14px; border: 1px solid var(--line); background: var(--bg)">
+                <p class="m" style="margin: 0 0 2px; font-size: 11px; color: var(--muted)">entrada</p>
+                <p style="margin: 0; font-weight: 500; font-size: 15px">App móvil</p>
+              </div>
+            </div>
+            <div style="padding: 18px 14px; background: {{accent}}; color: #0A2016; display: flex; flex-direction: column; justify-content: center; gap: 4px">
+              <p class="m" style="margin: 0; font-size: 11px; font-weight: 500">núcleo · NestJS</p>
+              <p class="d" style="margin: 0; font-weight: 700; font-size: 26px; line-height: 1">Torneos, clubes, inscripciones</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px">
+              <div style="flex: 1; padding: 14px; border: 1px solid var(--line); background: var(--bg)">
+                <p class="m" style="margin: 0 0 2px; font-size: 11px; color: var(--muted)">salida</p>
+                <p style="margin: 0; font-weight: 500; font-size: 15px">Stripe · pagos</p>
+              </div>
+              <div style="flex: 1; padding: 14px; border: 1px solid var(--line); background: var(--bg)">
+                <p class="m" style="margin: 0 0 2px; font-size: 11px; color: var(--muted)">salida</p>
+                <p style="margin: 0; font-weight: 500; font-size: 15px">Socket · chat y avisos</p>
+              </div>
+            </div>
+          </div>
+          <div class="m" style="flex-grow: 1; min-height: 220px; border: 1px dashed var(--line); background: var(--bg); display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; font-size: 13px; color: var(--muted)">[CAPTURA DE PADELHUB · pantalla Explorar torneos]</div>
+        </div>
+      </article>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 24px">
+        <a href="#proyectos" style="display: flex; flex-direction: column; text-decoration: none; border: 1px solid var(--line); background: var(--surface)">
+          <div class="m gridbg" style="aspect-ratio: 16 / 9; background-color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted)">[CAPTURA DEL PROYECTO]</div>
+          <div style="padding: 24px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line2)">
+            <h3 class="d" style="margin: 0; font-weight: 600; font-size: 30px; line-height: 1">[OTRO PROYECTO]</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">[Problema → solución → resultado, en una frase]</p>
+            <p class="m" style="margin: 0; font-size: 13px">[stack usado]</p>
+          </div>
+        </a>
+        <a href="#proyectos" style="display: flex; flex-direction: column; text-decoration: none; border: 1px solid var(--line); background: var(--surface)">
+          <div class="m gridbg" style="aspect-ratio: 16 / 9; background-color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted)">[CAPTURA DEL PROYECTO]</div>
+          <div style="padding: 24px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line2)">
+            <h3 class="d" style="margin: 0; font-weight: 600; font-size: 30px; line-height: 1">[OTRO PROYECTO]</h3>
+            <p style="margin: 0; color: var(--muted); font-size: 15px">[Problema → solución → resultado, en una frase]</p>
+            <p class="m" style="margin: 0; font-size: 13px">[stack usado]</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section id="contacto" style="background: var(--bg2)">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px; display: flex; flex-wrap: wrap; gap: 56px">
+      <div style="flex: 1 1 380px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 16px">
+        <p class="m" style="margin: 0; padding: 4px 10px; background: {{accent}}; color: #0A2016; font-size: 13px; font-weight: 500">04 / contacto</p>
+        <h2 class="d" style="margin: 0; font-weight: 700; font-size: clamp(48px, 6.4vw, 96px); line-height: 0.9; text-wrap: balance">{{contactTitle}}</h2>
+        <p style="margin: 0; max-width: 460px; color: var(--muted)">{{contactText}}</p>
+        <sc-if value="{{isServicios}}" hint-placeholder-val="{{ false }}">
+          <p class="m" style="margin: 0; padding: 12px 14px; border: 1px solid var(--line); font-size: 13px">selección → {{pickedLine}}</p>
+        </sc-if>
+        <div class="m" style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px">
+          <a href="https://www.linkedin.com/" style="min-height: 44px; display: inline-flex; align-items: center">LinkedIn</a>
+          <a href="https://github.com/" style="min-height: 44px; display: inline-flex; align-items: center">GitHub</a>
+        </div>
+      </div>
+      <form style="flex: 1 1 420px; min-width: 0; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; padding: 32px; border: 1px solid var(--line); background: var(--surface)">
+        <label for="c-nombre" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted)">Nombre
+          <input id="c-nombre" type="text" style="min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 0; background: var(--field); color: var(--ink); font: inherit; font-size: 15px">
+        </label>
+        <label for="c-email" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted)">Email
+          <input id="c-email" type="email" style="min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 0; background: var(--field); color: var(--ink); font: inherit; font-size: 15px">
+        </label>
+        <label for="c-msg" style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted)">{{msgLabel}}
+          <textarea id="c-msg" rows="4" style="padding: 12px 14px; border: 1px solid var(--line); border-radius: 0; background: var(--field); color: var(--ink); font: inherit; font-size: 15px; resize: vertical"></textarea>
+        </label>
+        <button type="button" style="min-height: 52px; border: none; border-radius: 0; background: {{accent}}; color: #0A2016; font: inherit; font-weight: 600; cursor: pointer">Enviar</button>
+      </form>
+    </div>
+  </section>
+
+  <footer style="border-top: 1px solid var(--line)">
+    <div class="m" style="max-width: 1280px; margin: 0 auto; padding: 28px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted)">
+      <span>© 2026 Julio Flores · España</span>
+      <span>Hecho con Astro · desplegado en infraestructura propia</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"perfilAccent":{"editor":"color","default":"#C6F24E","options":["#C6F24E","#8EE6A0","#E8E36A"],"section":"Colores"},"serviciosAccent":{"editor":"color","default":"#2FC98A","options":["#2FC98A","#7FD957","#3CC7B5"],"section":"Colores"},"startMode":{"editor":"enum","options":["perfil","servicios"],"default":"perfil"},"$preview":{"width":1440,"height":4900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mode: null, sel: 0, picks: { 0: true } };
+  }
+  renderVals() {
+    const mode = this.state.mode ?? this.props.startMode ?? 'perfil';
+    const isPerfil = mode === 'perfil';
+    const accent = isPerfil ? (this.props.perfilAccent ?? '#C6F24E') : (this.props.serviciosAccent ?? '#2FC98A');
+
+    const perfilNodes = [
+      ['Quarkus', 'Microservicios Java 17+ rápidos y con arranque nativo.'],
+      ['NestJS', 'APIs en TypeScript modulares, con Prisma y TypeORM.'],
+      ['Auth0', 'Identidad, SSO, vinculación de cuentas y confianza de dispositivo.'],
+      ['React · Vue', 'Interfaces que consumen la API sin acoplarse a ella.'],
+      ['WebSocket', 'Comunicación en tiempo real para datos que no pueden esperar.'],
+      ['Docker', 'Entornos reproducibles, del portátil a producción.']
+    ];
+    const serviciosNodes = [
+      ['MVP', 'Tu producto en producción en semanas, no en meses.'],
+      ['APIs', 'Backends robustos y documentados para tu web o tu app.'],
+      ['Auth', 'Login seguro y gestión de usuarios lista para crecer.'],
+      ['IA', 'Asistentes y automatizaciones integradas en tu producto.'],
+      ['Tiempo real', 'Notificaciones, chats y paneles en directo.'],
+      ['Cloud', 'Despliegue, dominios y CDN configurados y mantenidos.']
+    ];
+    const list = isPerfil ? perfilNodes : serviciosNodes;
+    const pos = [[50, 12], [82.9, 31], [82.9, 69], [50, 88], [17.1, 69], [17.1, 31]];
+    const sel = Math.min(this.state.sel, list.length - 1);
+
+    const nodes = list.map((n, i) => {
+      const on = i === sel;
+      return {
+        label: n[0],
+        on,
+        pick: () => this.setState({ sel: i }),
+        style: 'position: absolute; left: ' + pos[i][0] + '%; top: ' + pos[i][1] + '%; transform: translate(-50%, -50%); width: 20%; aspect-ratio: 0.866 / 1; min-height: 48px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 4px; font-family: \'IBM Plex Sans\', system-ui, sans-serif; font-weight: 600; font-size: clamp(11px, 1.25vw, 15px); line-height: 1.1; ' +
+          (on ? 'background: ' + accent + '; color: #0A2016;' : 'background: var(--node); color: var(--ink);')
+      };
+    });
+
+    const seg = 'min-height: 44px; min-width: 44px; padding: 0 18px; border: none; border-radius: 0; cursor: pointer; font-size: 14px; font-weight: 500; ';
+    const onSeg = seg + 'background: ' + accent + '; color: #0A2016;';
+    const offSeg = seg + 'background: transparent; color: var(--ink);';
+
+    const catalog = [
+      ['S-01', 'MVP web completo', 'De la idea a producción: frontend, backend, base de datos y despliegue.', 'desde [TU PRECIO]'],
+      ['S-02', 'APIs y backend', 'Servicios en Quarkus o NestJS, tiempo real con WebSocket, bien documentados.', 'desde [TU PRECIO]'],
+      ['S-03', 'Autenticación segura', 'Login, SSO, vinculación de cuentas y roles con Auth0.', 'desde [TU PRECIO]'],
+      ['S-04', 'IA y modernización', 'Integrar IA en tu producto o llevar un sistema antiguo a una arquitectura actual.', 'a consultar']
+    ];
+    const picks = this.state.picks;
+    const services = catalog.map((c, i) => {
+      const on = !!picks[i];
+      return {
+        code: c[0], title: c[1], text: c[2], price: c[3], on,
+        mark: on ? 'incluido' : '+ añadir',
+        markStyle: on ? 'padding: 1px 8px; background: ' + accent + '; color: #0A2016; font-weight: 500;' : 'padding: 1px 8px; border: 1px solid var(--line); color: var(--ink);',
+        toggle: () => this.setState({ picks: Object.assign({}, picks, { [i]: !on }) }),
+        style: 'display: flex; flex-direction: column; gap: 14px; min-height: 230px; padding: 24px; text-align: left; cursor: pointer; border-radius: 0; background: var(--surface); color: var(--ink); font: inherit; ' +
+          (on ? 'border: 2px solid ' + accent + '; box-shadow: 8px 8px 0 ' + accent + ';' : 'border: 2px solid var(--line2);')
+      };
+    });
+    const picked = services.filter((s) => s.on).map((s) => ({ title: s.title }));
+
+    return {
+      modeClass: isPerfil ? 'plano' : 'obra',
+      accent,
+      isPerfil,
+      isServicios: !isPerfil,
+      setPerfil: () => this.setState({ mode: 'perfil', sel: 0 }),
+      setServicios: () => this.setState({ mode: 'servicios', sel: 0 }),
+      perfilBtn: isPerfil ? onSeg : offSeg,
+      serviciosBtn: isPerfil ? offSeg : onSeg,
+      eyebrow: isPerfil ? 'full-stack senior · backend · España' : 'desarrollo a medida · webs, APIs y plataformas',
+      ctaLabel: isPerfil ? 'Ver trayectoria' : 'Pedir presupuesto',
+      ctaHref: '#contacto',
+      coreTag: isPerfil ? 'core/' : 'tu-proyecto/',
+      coreLabel: isPerfil ? 'Dominio' : 'Tu negocio',
+      hoja: isPerfil ? '01 / 02 · Perfil' : '02 / 02 · Servicios',
+      nodes,
+      sx: pos[sel][0],
+      sy: pos[sel][1],
+      selIndex: '0' + (sel + 1) + ' / 06',
+      selLabel: list[sel][0],
+      selText: list[sel][1],
+      services,
+      picked,
+      hasPicks: picked.length > 0,
+      noPicks: picked.length === 0,
+      pickedLine: picked.length ? picked.map((p) => p.title).join(' + ') : 'sin bloques marcados',
+      contactTitle: isPerfil ? '¿Buscas a alguien para tu equipo?' : '¿Tienes un proyecto en mente?',
+      contactText: isPerfil ? 'Abierto a conversar sobre nuevos retos como desarrollador senior.' : 'Cuéntame la idea y te respondo con una propuesta en menos de 48 horas.',
+      msgLabel: isPerfil ? 'Mensaje' : 'Cuéntame tu proyecto'
+    };
+  }
+}
+</script>
+</body>
+</html>

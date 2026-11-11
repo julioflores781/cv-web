@@ -1,0 +1,117 @@
+.form {
+  flex: 1 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.field {
+  /* The design's inputs are content-box: 48px min-height plus the 1px borders (50px). They fill the column by stretching. */
+  box-sizing: content-box;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-input);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.textarea {
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.field[aria-invalid="true"] {
+  border-width: 2px;
+}
+
+.counter {
+  align-self: flex-end;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.error {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* The honeypot lives off screen: not display:none, which some bots detect. */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.noscript {
+  font-size: 14px;
+}
+
+/* Empty live regions stay in the DOM (a screen reader only announces text added to an existing region); they must not take space. */
+.status:empty,
+.alert:empty {
+  margin-top: -16px;
+  padding: 0;
+  border: 0;
+}
+
+.status,
+.alert {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  font-size: 15px;
+}
+
+.alert {
+  border-width: 2px;
+}
+
+.alert a {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

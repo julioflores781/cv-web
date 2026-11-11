@@ -1,0 +1,6 @@
+.line {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,580 @@
+{
+  "es": {
+    "resume": {
+      "language": "es",
+      "profile": {
+        "name": "Julio Flores",
+        "label": "full-stack senior · backend",
+        "tagline": "Backend · arquitectura hexagonal",
+        "city": null,
+        "countryCode": "ES",
+        "summary": "Desarrollador full-stack senior con foco en backend y arquitectura hexagonal. Desde 2017 diseñando sistemas para el sector sanitario, donde los fallos no son una opción.",
+        "availability": null
+      },
+      "contact": {
+        "email": "hola@example.test",
+        "profiles": [
+          {
+            "network": "LinkedIn",
+            "url": "https://www.linkedin.com/"
+          },
+          {
+            "network": "GitHub",
+            "url": "https://github.com/"
+          }
+        ]
+      },
+      "impact": [
+        {
+          "value": "6",
+          "text": "puertos del hexágono"
+        },
+        {
+          "value": "4",
+          "text": "servicios"
+        },
+        {
+          "value": "2",
+          "text": "proyectos"
+        },
+        {
+          "value": "1",
+          "text": "núcleo que no cambia"
+        }
+      ],
+      "experience": [
+        {
+          "id": "sale-brick",
+          "company": "Sale & Brick",
+          "position": "Full Stack Developer",
+          "period": {
+            "start": "2017-01",
+            "end": null,
+            "current": true
+          },
+          "summary": "Plataformas para el sector sanitario. Backend con Quarkus y NestJS, autenticación con Auth0, tiempo real con WebSocket y frontends en React y Vue.",
+          "phases": [],
+          "highlights": []
+        }
+      ],
+      "skills": [
+        {
+          "key": "backend",
+          "name": "Backend",
+          "keywords": [
+            "Quarkus",
+            "NestJS",
+            "Java 17+",
+            "TypeScript"
+          ]
+        },
+        {
+          "key": "frontend",
+          "name": "Frontend",
+          "keywords": [
+            "React",
+            "Vue"
+          ]
+        },
+        {
+          "key": "platform",
+          "name": "Plataforma",
+          "keywords": [
+            "Auth0",
+            "WebSocket",
+            "Docker"
+          ]
+        }
+      ],
+      "education": {
+        "education": [],
+        "certificates": [],
+        "courses": []
+      },
+      "languages": []
+    },
+    "architecture": {
+      "core": {
+        "name": "Dominio",
+        "description": null
+      },
+      "ports": [
+        {
+          "id": "port-1",
+          "name": "Quarkus",
+          "description": "Microservicios Java 17+ rápidos y con arranque nativo.",
+          "adapters": [
+            {
+              "id": "adapter-1",
+              "name": "Quarkus",
+              "status": "in-this-api",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-2",
+          "name": "NestJS",
+          "description": "APIs en TypeScript modulares, con Prisma y TypeORM.",
+          "adapters": [
+            {
+              "id": "adapter-2",
+              "name": "NestJS",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-3",
+          "name": "Auth0",
+          "description": "Identidad, SSO, vinculación de cuentas y confianza de dispositivo.",
+          "adapters": [
+            {
+              "id": "adapter-3",
+              "name": "Auth0",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-4",
+          "name": "React · Vue",
+          "description": "Interfaces que consumen la API sin acoplarse a ella.",
+          "adapters": [
+            {
+              "id": "adapter-4",
+              "name": "React · Vue",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-5",
+          "name": "WebSocket",
+          "description": "Comunicación en tiempo real para datos que no pueden esperar.",
+          "adapters": [
+            {
+              "id": "adapter-5",
+              "name": "WebSocket",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-6",
+          "name": "Docker",
+          "description": "Entornos reproducibles, del portátil a producción.",
+          "adapters": [
+            {
+              "id": "adapter-6",
+              "name": "Docker",
+              "status": "production",
+              "note": null
+            }
+          ]
+        }
+      ]
+    },
+    "services": [
+      {
+        "id": "s-01",
+        "title": "MVP web completo",
+        "summary": "De la idea a producción: frontend, backend, base de datos y despliegue.",
+        "price": {
+          "from": 1500,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-02",
+        "title": "APIs y backend",
+        "summary": "Servicios en Quarkus o NestJS, tiempo real con WebSocket, bien documentados.",
+        "price": {
+          "from": 900,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-03",
+        "title": "Autenticación segura",
+        "summary": "Login, SSO, vinculación de cuentas y roles con Auth0.",
+        "price": {
+          "from": 600,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-04",
+        "title": "IA y modernización",
+        "summary": "Integrar IA en tu producto o llevar un sistema antiguo a una arquitectura actual.",
+        "price": null
+      }
+    ],
+    "projects": [
+      {
+        "id": "padelhub",
+        "title": "PadelHub",
+        "summary": "Plataforma de gestión de torneos de pádel. Los administradores crean y gestionan torneos; los jugadores se unen a clubes, se inscriben, pagan y comparten torneos con sus amigos.",
+        "relation": "own",
+        "role": "web + app móvil",
+        "disclosure": "public",
+        "client": null,
+        "clientLabel": null,
+        "period": {
+          "start": "2025-01",
+          "end": null,
+          "current": true
+        },
+        "stack": [
+          "NestJS",
+          "Next.js",
+          "Stripe",
+          "Socket"
+        ],
+        "highlights": [
+          "Perfil de administrador de torneos y de jugador",
+          "Inscripciones cobradas con Stripe",
+          "Chat entre amigos y salas de torneo, grupo y partido; notificaciones por Socket",
+          "NestJS hexagonal + Next.js, ambos en TypeScript estricto"
+        ],
+        "links": [
+          {
+            "label": "Ver un torneo compartido",
+            "url": "https://padelhub.floreslab.dev/share/69f755af69dc75fbb616141d"
+          },
+          {
+            "label": "Abrir PadelHub",
+            "url": "https://padelhub.floreslab.dev"
+          }
+        ]
+      },
+      {
+        "id": "example",
+        "title": "Proyecto de ejemplo",
+        "summary": "Problema, solución y resultado en una frase.",
+        "relation": "employer",
+        "role": null,
+        "disclosure": "anonymous",
+        "client": null,
+        "clientLabel": "Empresa del sector sanitario",
+        "period": null,
+        "stack": [
+          "Quarkus",
+          "Docker"
+        ],
+        "highlights": [],
+        "links": []
+      },
+      {
+        "id": "example-2",
+        "title": "Proyecto de ejemplo",
+        "summary": "Problema, solución y resultado en una frase.",
+        "relation": "employer",
+        "role": null,
+        "disclosure": "anonymous",
+        "client": null,
+        "clientLabel": "Empresa del sector sanitario",
+        "period": null,
+        "stack": [
+          "Quarkus",
+          "Docker"
+        ],
+        "highlights": [],
+        "links": []
+      }
+    ]
+  },
+  "en": {
+    "resume": {
+      "language": "en",
+      "profile": {
+        "name": "Julio Flores",
+        "label": "senior full-stack · backend",
+        "tagline": "Backend · hexagonal architecture",
+        "city": null,
+        "countryCode": "ES",
+        "summary": "Senior full-stack developer focused on backend and hexagonal architecture. Designing systems for healthcare since 2017, where failures are not an option.",
+        "availability": null
+      },
+      "contact": {
+        "email": "hola@example.test",
+        "profiles": [
+          {
+            "network": "LinkedIn",
+            "url": "https://www.linkedin.com/"
+          },
+          {
+            "network": "GitHub",
+            "url": "https://github.com/"
+          }
+        ]
+      },
+      "impact": [
+        {
+          "value": "6",
+          "text": "hexagon ports"
+        },
+        {
+          "value": "4",
+          "text": "services"
+        },
+        {
+          "value": "2",
+          "text": "projects"
+        },
+        {
+          "value": "1",
+          "text": "core that never changes"
+        }
+      ],
+      "experience": [
+        {
+          "id": "sale-brick",
+          "company": "Sale & Brick",
+          "position": "Full Stack Developer",
+          "period": {
+            "start": "2017-01",
+            "end": null,
+            "current": true
+          },
+          "summary": "Healthcare platforms. Backend with Quarkus and NestJS, authentication with Auth0, real time with WebSocket and React and Vue frontends.",
+          "phases": [],
+          "highlights": []
+        }
+      ],
+      "skills": [
+        {
+          "key": "backend",
+          "name": "Backend",
+          "keywords": [
+            "Quarkus",
+            "NestJS",
+            "Java 17+",
+            "TypeScript"
+          ]
+        },
+        {
+          "key": "frontend",
+          "name": "Frontend",
+          "keywords": [
+            "React",
+            "Vue"
+          ]
+        },
+        {
+          "key": "platform",
+          "name": "Platform",
+          "keywords": [
+            "Auth0",
+            "WebSocket",
+            "Docker"
+          ]
+        }
+      ],
+      "education": {
+        "education": [],
+        "certificates": [],
+        "courses": []
+      },
+      "languages": []
+    },
+    "architecture": {
+      "core": {
+        "name": "Domain",
+        "description": null
+      },
+      "ports": [
+        {
+          "id": "port-1",
+          "name": "Quarkus",
+          "description": "Fast Java 17+ microservices with native startup.",
+          "adapters": [
+            {
+              "id": "adapter-1",
+              "name": "Quarkus",
+              "status": "in-this-api",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-2",
+          "name": "NestJS",
+          "description": "Modular TypeScript APIs, with Prisma and TypeORM.",
+          "adapters": [
+            {
+              "id": "adapter-2",
+              "name": "NestJS",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-3",
+          "name": "Auth0",
+          "description": "Identity, SSO, account linking and device trust.",
+          "adapters": [
+            {
+              "id": "adapter-3",
+              "name": "Auth0",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-4",
+          "name": "React · Vue",
+          "description": "Interfaces that consume the API without coupling to it.",
+          "adapters": [
+            {
+              "id": "adapter-4",
+              "name": "React · Vue",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-5",
+          "name": "WebSocket",
+          "description": "Real-time communication for data that cannot wait.",
+          "adapters": [
+            {
+              "id": "adapter-5",
+              "name": "WebSocket",
+              "status": "production",
+              "note": null
+            }
+          ]
+        },
+        {
+          "id": "port-6",
+          "name": "Docker",
+          "description": "Reproducible environments, from laptop to production.",
+          "adapters": [
+            {
+              "id": "adapter-6",
+              "name": "Docker",
+              "status": "production",
+              "note": null
+            }
+          ]
+        }
+      ]
+    },
+    "services": [
+      {
+        "id": "s-01",
+        "title": "Complete web MVP",
+        "summary": "From idea to production: frontend, backend, database and deployment.",
+        "price": {
+          "from": 1500,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-02",
+        "title": "APIs and backend",
+        "summary": "Quarkus or NestJS services, real time with WebSocket, well documented.",
+        "price": {
+          "from": 900,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-03",
+        "title": "Secure authentication",
+        "summary": "Login, SSO, account linking and roles with Auth0.",
+        "price": {
+          "from": 600,
+          "currency": "EUR"
+        }
+      },
+      {
+        "id": "s-04",
+        "title": "AI and modernisation",
+        "summary": "Add AI to your product or move a legacy system to a current architecture.",
+        "price": null
+      }
+    ],
+    "projects": [
+      {
+        "id": "padelhub",
+        "title": "PadelHub",
+        "summary": "Padel tournament management platform. Admins create and run tournaments; players join clubs, sign up, pay and share tournaments with friends.",
+        "relation": "own",
+        "role": "web + mobile app",
+        "disclosure": "public",
+        "client": null,
+        "clientLabel": null,
+        "period": {
+          "start": "2025-01",
+          "end": null,
+          "current": true
+        },
+        "stack": [
+          "NestJS",
+          "Next.js",
+          "Stripe",
+          "Socket"
+        ],
+        "highlights": [
+          "Tournament admin and player profiles",
+          "Sign-ups charged with Stripe",
+          "Friend chat and tournament, group and match rooms; Socket notifications",
+          "Hexagonal NestJS + Next.js, both in strict TypeScript"
+        ],
+        "links": [
+          {
+            "label": "See a shared tournament",
+            "url": "https://padelhub.floreslab.dev/share/69f755af69dc75fbb616141d"
+          },
+          {
+            "label": "Open PadelHub",
+            "url": "https://padelhub.floreslab.dev"
+          }
+        ]
+      },
+      {
+        "id": "example",
+        "title": "Example project",
+        "summary": "Problem, solution and result in one sentence.",
+        "relation": "employer",
+        "role": null,
+        "disclosure": "anonymous",
+        "client": null,
+        "clientLabel": "Healthcare company",
+        "period": null,
+        "stack": [
+          "Quarkus",
+          "Docker"
+        ],
+        "highlights": [],
+        "links": []
+      },
+      {
+        "id": "example-2",
+        "title": "Example project",
+        "summary": "Problem, solution and result in one sentence.",
+        "relation": "employer",
+        "role": null,
+        "disclosure": "anonymous",
+        "client": null,
+        "clientLabel": "Healthcare company",
+        "period": null,
+        "stack": [
+          "Quarkus",
+          "Docker"
+        ],
+        "highlights": [],
+        "links": []
+      }
+    ]
+  }
+}
