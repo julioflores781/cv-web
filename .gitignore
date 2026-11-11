@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.cache/
+.env*
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+!.env.example
+design/artifact-v2/.rendered/
+design/artifact-v2/.shots/
+
+# Maquetas antiguas con datos reales del CV (no se publican)
+design/preview.html
+design/artifact/
