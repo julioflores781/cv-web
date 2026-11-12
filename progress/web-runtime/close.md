@@ -5,3 +5,7 @@
 - Verificación: lint OK, typecheck OK, 346/346 tests (76 archivos), build OK, Node 22.
 - Autorización humana explícita de Julio para cerrar, publicar y fusionar a `main` por PR.
 - Publicación y CI: ver sección siguiente (se completa tras la ejecución en `main`).
+
+## Nota — primera CI
+
+- El job de pruebas de la primera CI (PR #2) falló por un falso positivo de T5 en el escáner de higiene. Arreglado en `f987977` (slug `web-runtime-ci`). Esta sección se completa tras la ejecución en `main`.

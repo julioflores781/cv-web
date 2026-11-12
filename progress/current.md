@@ -4,6 +4,7 @@ Tarea en curso: ninguna (web-runtime CERRADO).
 
 ## web-runtime
 CERRADO (9/9 slugs, commits a32a159/ee102f9/04c7777, merge 35c74fb en develop). Detalle en `progress/web-runtime/close.md`.
+- Arreglo del falso positivo T5 (`web-runtime-ci`, `f987977`) subido; PR #2 en revisión de CI.
 - Pendiente: primera ejecución de la CI en `main` (job de pruebas y job `docker`: build amd64 + smoke + publicación) y la verificación del humano.
 - Docker no se verificó en local (sin daemon): imagen, arm64, healthcheck, smoke y publicación (T98-T100) solo los comprueba la CI.
 - Pendiente del humano: revisión visual de Perfil/Servicios y de los estados vacíos.

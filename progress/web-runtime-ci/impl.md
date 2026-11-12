@@ -26,3 +26,15 @@
 
 ## Verificación (Node 22.23.1)
 `npm run lint`, `npm run typecheck`, `npm test` (310/310) y `npm run build`: verdes.
+
+## Correcciones tras la CI real (PR #2, run 43128054670)
+Fallo: T5 marcó `password: ${{ secrets.DOCKERHUB_TOKEN }}` (ci.yml l.70, forma estándar de docker/login-action). En local pasó porque ci.yml aún no estaba versionado y el escáner usaba `git ls-files`.
+- Escáner extraído a `tests/helpers/secret-scan.ts` (`containsSecret`). Un valor es válido si está vacío, empieza por `CAMBIA-` o es EXACTAMENTE una referencia `${{ secrets.NOMBRE }}` (con o sin comillas). Un literal, `${{ env.X }}` o una referencia con sufijo literal siguen fallando.
+- T5 escanea ahora `git ls-files --cached --others --exclude-standard` (versionados + sin versionar no ignorados; se omiten los borrados), de modo que esta clase de fallo se ve en local antes de commitear.
+- Bandera `i`: ya solo se aplica a las claves password/SECRET; AKIA, ghp_, BEGIN y xox[bp]- son sensibles a mayúsculas.
+- Tests añadidos (fuera del plan): "T5 extra: referencias a secretos y CAMBIA- aceptados, literales rechazados" y "T5 extra: formas de token sensibles a mayúsculas". Las muestras se montan por concatenación para que los archivos del test no se detecten a sí mismos.
+- Verificación Node 22: lint, typecheck, `npm test` x2 (76 archivos / 347 tests), build: verdes. Simulación de CI: copia a tmp, `git init`, `git add -A` (ci.yml con el job docker incluido), `npm ci`, lint, typecheck, test: verdes.
+
+## Corrección tras el review: T89 restaurado
+Al reescribir el bloque «public repository hygiene» se borró por error el test T89 (A9 de web-runtime-dominio). Restaurado tal cual estaba, solo cambia la lista que recorre: `candidates` (versionados + sin versionar no ignorados) en lugar de `tracked`. El diff contra HEAD de `tests/source.test.ts` ya solo toca T5, sus tests extra, el import de `containsSecret` y la lista `candidates`.
+Verificación Node 22: lint, typecheck, `npm test` x2 (76 archivos / 348 tests, +1 respecto a la ronda anterior), build: verdes.
