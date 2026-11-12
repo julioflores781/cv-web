@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { containsSecret } from './helpers/secret-scan';
 
 const root = path.resolve(__dirname, '..');
 const SOURCE_DIRS = ['app', 'components', 'lib', 'tests'];
@@ -111,8 +112,12 @@ describe('not-found page', () => {
 });
 
 describe('public repository hygiene', () => {
-  const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
-    .split('\0')
+  // Tracked plus untracked-but-not-ignored files, so a leak shows up locally before committing.
+  const candidates = [
+    ...new Set(
+      execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split('\0'),
+    ),
+  ]
     // progress/ holds harness notes that name the forbidden patterns on purpose (audited by hand, R10).
     // Files deleted in the working tree (not yet committed) are still listed by git.
     .filter((file) => file !== '' && file !== 'package-lock.json' && !file.startsWith('progress/') && existsSync(path.join(root, file)));
@@ -120,23 +125,42 @@ describe('public repository hygiene', () => {
   it('T89: no versioned file (progress/ excluded) mentions the old subdomain nor the old hosting', () => {
     // Built from parts so this file does not match its own patterns.
     const forbidden = new RegExp([['cv', 'floreslab', 'dev'].join('\\.'), ['pages', 'dev'].join('\\.'), 'Cloudflare\\s+Pages'].join('|'), 'i');
-    const offenders = tracked.filter((file) => {
+    const offenders = candidates.filter((file) => {
       const content = readFileSync(path.join(root, file));
       return !content.includes(0) && forbidden.test(content.toString('utf8'));
     });
     expect(offenders).toEqual([]);
   });
 
-  it('T5: no .env files but .env.example, .gitignore covers .env*, and no secret patterns in tracked files', () => {
-    expect(tracked.filter((file) => /(^|\/)\.env/.test(file) && path.basename(file) !== '.env.example')).toEqual([]);
+  it('T5: no .env files but .env.example, .gitignore covers .env*, and no secret patterns in the source tree', () => {
+    expect(candidates.filter((file) => /(^|\/)\.env/.test(file) && path.basename(file) !== '.env.example')).toEqual([]);
     expect(readFileSync(path.join(root, '.gitignore'), 'utf8').split('\n')).toContain('.env*');
 
-    // Character classes keep this file from matching its own patterns.
-    const secretPattern = /gh[p]_|AKI[A]|-----BEGI[N]|xo[x][bp]-|\b(?:password|SECRET):[ \t]*['"]?(?!CAMBIA-)[^\s'"]/i;
-    const offenders = tracked.filter((file) => {
+    const offenders = candidates.filter((file) => {
       const content = readFileSync(path.join(root, file));
-      return !content.includes(0) && secretPattern.test(content.toString('utf8'));
+      return !content.includes(0) && containsSecret(content.toString('utf8'));
     });
     expect(offenders).toEqual([]);
+  });
+
+  it('T5 extra: Actions secret references and CAMBIA- placeholders are accepted; literal values are rejected', () => {
+    // Keys are assembled so this file does not match the scanner itself.
+    const pass = ['pass', 'word'].join('');
+    const secret = ['SEC', 'RET'].join('');
+    expect(containsSecret(`${pass}: \${{ secrets.DOCKERHUB_TOKEN }}`)).toBe(false);
+    expect(containsSecret(`${pass}: '\${{secrets.X_1}}'`)).toBe(false);
+    expect(containsSecret(`${secret}: CAMBIA-secret`)).toBe(false);
+    expect(containsSecret(`${pass}: hunter2`)).toBe(true);
+    expect(containsSecret(`${pass}: "\${{ secrets.X }}-literal"`)).toBe(true);
+    expect(containsSecret(`${pass}: \${{ env.PASSWORD }}`)).toBe(true);
+    expect(containsSecret(`${secret}: abc`)).toBe(true);
+  });
+
+  it('T5 extra: token shapes are matched case-sensitively', () => {
+    expect(containsSecret(['gh', 'p_', 'a'.repeat(20)].join(''))).toBe(true);
+    expect(containsSecret(['AKI', 'A', 'B'.repeat(16)].join(''))).toBe(true);
+    expect(containsSecret(['-----BEGI', 'N PRIVATE KEY-----'].join(''))).toBe(true);
+    expect(containsSecret(['GH', 'P_', 'a'.repeat(20)].join(''))).toBe(false);
+    expect(containsSecret('akia is a word')).toBe(false);
   });
 });
