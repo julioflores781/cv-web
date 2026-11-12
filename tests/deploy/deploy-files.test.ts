@@ -123,6 +123,51 @@ describe('deploy/docker-compose.yml', () => {
   });
 });
 
+describe('deploy/docker-compose.yml: admin and R2 variables of cv-api', () => {
+  const api = active(block(read('deploy', 'docker-compose.yml'), /^ {2}cv-api:/));
+  const value = (name: string): string | undefined => new RegExp(`^\\s+${name}:\\s*("[^"]*"|[^\\s#]+)`, 'm').exec(api)?.[1];
+
+  it('extra Da: every admin and R2 variable the API reads is declared, with the documented defaults and no unused R2_KEY_PREFIX', () => {
+    for (const name of [
+      'CV_ADMIN_JWT_SECRET',
+      'CV_ADMIN_SESSION_LIFESPAN',
+      'CV_ADMIN_LOGIN_MAX_FAILURES',
+      'CV_ADMIN_LOGIN_LOCK',
+      'CV_ADMIN_EDGE_BLOCK',
+      'R2_ENDPOINT',
+      'R2_BUCKET_NAME',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+      'R2_PUBLIC_URL',
+    ]) {
+      expect(value(name), name).toBeDefined();
+    }
+    expect(value('CV_ADMIN_SESSION_LIFESPAN')).toBe('PT8H');
+    expect(value('CV_ADMIN_LOGIN_MAX_FAILURES')).toBe('"5"');
+    expect(value('CV_ADMIN_LOGIN_LOCK')).toBe('PT15M');
+    expect(api).not.toMatch(/R2_KEY_PREFIX/);
+  });
+
+  it('extra Db: the Cloudflare edge guard is on, and the R2 credentials and public URL ship empty (upload disabled)', () => {
+    expect(value('CV_ADMIN_EDGE_BLOCK')).toBe('"true"');
+    for (const name of ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_PUBLIC_URL']) expect(value(name), name).toBe('""');
+    expect(value('R2_ENDPOINT')).toMatch(/^https:\/\/CAMBIA-/);
+    expect(value('R2_BUCKET_NAME')).toMatch(/^CAMBIA-/);
+  });
+
+  it('extra Dc: the JWT secret is a CAMBIA placeholder shorter than 32 characters, so an unedited compose leaves the admin disabled', () => {
+    const secret = value('CV_ADMIN_JWT_SECRET') as string;
+    expect(secret).toMatch(/^CAMBIA-/);
+    expect(secret.length).toBeLessThan(32);
+  });
+
+  it('extra Dd: the Argon2 knobs are only commented-out documentation and the container has no memory limit that would starve them', () => {
+    expect(api).not.toMatch(/CV_ADMIN_ARGON2_/);
+    expect(read('deploy', 'docker-compose.yml')).toMatch(/^\s+# CV_ADMIN_ARGON2_MEMORY_KIB:/m);
+    expect(api).not.toMatch(/mem_limit|memory:|deploy:/);
+  });
+});
+
 describe('ci workflow: docker job', () => {
   const job = block(workflow, /^ {2}docker:/);
 
