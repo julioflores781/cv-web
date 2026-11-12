@@ -1,6 +1,12 @@
 # Estado de la sesión
 
-Tarea en curso: ninguna (web-runtime CERRADO).
+Tarea en curso: ninguna. Siguiente: `api-observability`, con el plan en `progress/api-observability/analysis.md` (brief en `brief.md`).
+
+## api-admin
+CERRADO (7/7 slugs, `cv`: merge `40cf2a7` en develop; `cv-web`: commit `0fbba98` + merge en develop). Detalle y pasos de PR en `progress/api-admin/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).
+- NO verificado: R2 real, regla WAF de Cloudflare para `/api/v1/admin/*`, Argon2 y `admin-password.sh` en el NAS, el workflow de GitHub Actions de `cv`.
+- Pendientes del humano: crear token R2 propio, crear la regla WAF, revocar el token de Telegram expuesto en el IDE, prueba manual contra R2.
+- Pendiente de la fase 3 (repo `cv-web`): panel `/admin`, tipos TS de `images[]`, la web pública leyendo `project.images`.
 
 ## web-runtime
 CERRADO (9/9 slugs, commits a32a159/ee102f9/04c7777, merge 35c74fb en develop). Detalle en `progress/web-runtime/close.md`.
