@@ -42,27 +42,3 @@ export class ResumeFetchError extends ApiFetchError {
     this.name = 'ResumeFetchError';
   }
 }
-
-/** Neither the API nor the saved fallback copy could provide a resource: the build must fail. */
-export class ContentUnavailableError extends Error {
-  readonly resource: string;
-  readonly lang: Lang;
-
-  constructor(resource: string, lang: Lang, cause: string, cacheFile: string) {
-    super(
-      `${resource} (${lang}) unavailable: the API failed (${cause}) and there is no valid saved copy at ${cacheFile}. ` +
-        'Refusing to publish a site without data.',
-    );
-    this.name = 'ContentUnavailableError';
-    this.resource = resource;
-    this.lang = lang;
-  }
-}
-
-/** Neither the API nor the saved fallback copy could provide a resume: the build must fail. */
-export class ResumeUnavailableError extends ContentUnavailableError {
-  constructor(lang: Lang, cause: string, cacheFile: string) {
-    super('Resume', lang, cause, cacheFile);
-    this.name = 'ResumeUnavailableError';
-  }
-}

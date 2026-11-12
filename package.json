@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "start": "node .next/standalone/server.js",
     "test": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -2,8 +2,6 @@ import { parseProblem } from '@/lib/problem';
 import type { ContactField, ContactValues, SendResult } from './types';
 
 export interface SendOptions {
-  /** API base URL (comes from the server, never from the environment). */
-  apiUrl: string;
   lang: 'es' | 'en';
   values: ContactValues;
   /** Honeypot content (a person leaves it empty). */
@@ -28,8 +26,8 @@ function parseBody(text: string): ReturnType<typeof parseProblem> {
   }
 }
 
-/** The only `fetch` outside `lib/api`: `POST /api/v1/contact/messages?lang=`, with `Content-Type: application/json` as the only header. */
-export async function sendContactMessage({ apiUrl, lang, values, website = '', timeoutMs = DEFAULT_TIMEOUT_MS, signal }: SendOptions): Promise<SendResult> {
+/** The only `fetch` outside `lib/api`: a relative `POST /api/contact/?lang=` to this site's own origin, with `Content-Type: application/json` as the only header. */
+export async function sendContactMessage({ lang, values, website = '', timeoutMs = DEFAULT_TIMEOUT_MS, signal }: SendOptions): Promise<SendResult> {
   const controller = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {
@@ -41,7 +39,7 @@ export async function sendContactMessage({ apiUrl, lang, values, website = '', t
   signal?.addEventListener('abort', onCallerAbort, { once: true });
 
   try {
-    const response = await fetch(`${apiUrl.replace(/\/+$/, '')}/api/v1/contact/messages?lang=${lang}`, {
+    const response = await fetch(`/api/contact/?lang=${lang}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -50,8 +48,6 @@ export async function sendContactMessage({ apiUrl, lang, values, website = '', t
         message: values.message.trim(),
         website,
       }),
-      mode: 'cors',
-      credentials: 'omit',
       cache: 'no-store',
       signal: controller.signal,
     });

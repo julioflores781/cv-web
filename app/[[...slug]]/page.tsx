@@ -4,7 +4,7 @@ import { HomeView } from '@/components/home-view';
 import { getArchitecture, getConfig, getProjects, getResume, getServices } from '@/lib/api';
 import { cvPdfHref } from '@/lib/pdf/files';
 import { getCvPdf } from '@/lib/pdf/build-cv-pdf';
-import { allRoutes, resolveRoute, routeSlug, type Route } from '@/lib/i18n/routes';
+import { resolveRoute, type Route } from '@/lib/i18n/routes';
 import { resolveProjectImages } from '@/lib/projects/images';
 import { buildMetadata } from '@/lib/seo/metadata';
 
@@ -12,12 +12,8 @@ interface PageProps {
   params: Promise<{ slug?: string[] }>;
 }
 
-// Only the 4 routes of `allRoutes()` exist; anything else is a 404.
-export const dynamicParams = false;
-
-export function generateStaticParams(): Array<{ slug: string[] }> {
-  return allRoutes().map((route) => ({ slug: routeSlug(route) }));
-}
+// Rendered on every request: the data comes from the API at runtime, never at build time.
+export const dynamic = 'force-dynamic';
 
 async function resolve(params: PageProps['params']): Promise<Route> {
   const { slug } = await params;
@@ -38,7 +34,7 @@ export default async function Page({ params }: PageProps) {
     getServices(route.lang),
     getProjects(route.lang),
   ]);
-  const { siteUrl, apiUrl } = getConfig();
+  const { siteUrl } = getConfig();
   // The CV PDF is linked from the profile only, and only if it rendered.
   const pdfHref = route.page === 'profile' && (await getCvPdf(route.lang)) ? cvPdfHref(route.lang) : null;
   return (
@@ -51,7 +47,6 @@ export default async function Page({ params }: PageProps) {
       pdfHref={pdfHref}
       route={route}
       siteUrl={siteUrl}
-      apiUrl={apiUrl}
     />
   );
 }

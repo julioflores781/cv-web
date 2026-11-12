@@ -3,16 +3,19 @@
 > Patrones y convenciones. `analyst`, `implementer` y `reviewer` la consultan.
 
 ## Stack
-- **Next.js** (App Router) con `output: 'export'` (sitio 100 % estático), **React**, **TypeScript estricto**.
-- Estilos: **CSS Modules + variables CSS** con los tokens de `design/preview.html` (propuesta B). Sin librería de UI.
+- **Next.js** (App Router) con `output: 'standalone'` (servidor Node pensado para un contenedor; páginas `force-dynamic`, `trailingSlash`, imágenes sin optimizar), **React**, **TypeScript estricto**.
+- Estilos: **CSS Modules + variables CSS** con los tokens de `design/artifact-v2/project/Main.dc.html`. Sin librería de UI.
 - Tests: **Vitest** + Testing Library. Lint: ESLint (config de Next). Las versiones exactas las fija el analyst tras comprobarlas.
 
 ## Datos
-- Una sola puerta de entrada: `lib/api`. Hace `fetch` a `${CV_API_URL}/api/v1/resume?lang=<es|en>` **solo en el build**.
+- Una sola puerta de entrada: `lib/api`. Hace `GET ${CV_API_URL}/api/v1/<recurso>?lang=<es|en>` (resume, services, projects, architecture) **en cada render**, nunca en el build (el build no toca la API).
 - Los tipos salen del OpenAPI de la API (`/openapi.json`); no se escriben a mano.
-- Resiliencia: en cada build correcto se guarda la respuesta en una caché (ruta que conserve Cloudflare Pages); si la API falla, se usa esa copia
-  y se avisa; si no hay copia, el build **falla**. Nunca se publica una web sin datos.
-- Los componentes reciben props tipadas; no hacen `fetch` ni leen `process.env`.
+- Sin caché ni respaldo: solo hay memo por petición (`React.cache`), para que `generateMetadata` y la página compartan la lectura. Si la API falla o responde algo inválido,
+  la página da **500**; nunca se sirven datos viejos. (Una caché de contenido invalidable de la API queda para la fase 2.)
+- Servicios, proyectos y arquitectura vacíos se muestran con un estado vacío (textos `empty.*` del diccionario), no desaparecen.
+- Los componentes reciben props tipadas; no hacen `fetch` ni leen `process.env`. El único `process.env` está en `lib/api/config.ts` (`CV_API_URL`, `SITE_URL`), leído en cada llamada.
+- Contacto: el navegador hace `POST /api/contact/` a su propio origen; `app/api/contact/route.ts` valida y reenvía a la API (`lib/api/contact.ts`). La URL interna de la API no llega al HTML.
+- Salud: `GET /api/health/` responde 200 `{"status":"ok","api":"up"}` o 503 si la API no contesta (pensado para el healthcheck del contenedor).
 
 ## i18n
 Español en `/`, inglés en `/en`. Diccionarios en `lib/i18n`. Las dos rutas comparten componentes. `hreflang` y `lang` correctos.
@@ -23,17 +26,18 @@ mobile-first (probar a 360 px y a escritorio).
 
 ## SEO
 `title`, `description`, Open Graph, `hreflang`, canonical y JSON-LD `Person` por idioma; `sitemap.xml` y `robots.txt`.
+Todas esas URLs salen de `SITE_URL` (por defecto `https://floreslab.dev`), leído en runtime: `app/sitemap.ts` y `app/robots.ts` son `force-dynamic` (salen `ƒ` en la tabla de rutas del build). No hay redirección entre hosts.
 
 ## Seguridad y privacidad
 Sin teléfono, documento ni fecha de nacimiento. Sin secretos en el repo; `CV_API_URL` es pública. Enlaces externos con `rel="noopener noreferrer"`.
 
 ## Testing
-Unitarios para `lib/`, de componente para UI (con fixtures ficticios «Ada Ejemplo») y una prueba que inspecciona el HTML generado
-(privacidad, SEO, idiomas). Cada criterio de aceptación tiene al menos un test.
+Unitarios para `lib/`, de componente para UI (con fixtures ficticios «Ada Ejemplo») y pruebas de runtime (`tests/runtime`) que levantan el servidor standalone contra una API falsa e inspeccionan el HTML
+(privacidad, SEO, idiomas, dominio). `tests/runtime/proxy-ready.test.ts` (lento) demuestra, en una copia temporal, que un `proxy.ts` con `matcher ['/admin/:path*']` y un `POST` que escribe una cookie `httpOnly` caben en el standalone sin alterar las páginas públicas (preparación de la fase 3, admin). Cada criterio de aceptación tiene al menos un test.
 
 ## PDF del CV
-- `lib/pdf/` (`@react-pdf/renderer@4.9.0`, JS puro): `files.ts` (nombres/ruta, única fuente), `fonts.ts` (`.woff` de `@fontsource/*@5.3.0`, sin copias), `theme.ts` (= tokens «obra» de `globals.css`, con test), `cv-document.tsx` (A4, una columna, ATS), `build-cv-pdf.ts` (`getCvPdf`, memo por idioma), `response.ts`.
-- Rutas estáticas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Datos: `getResume` (si falta la fuente, el build falla). Si el render falla: `null` + `console.warn`, la web se construye y el botón se omite.
+- `lib/pdf/` (`@react-pdf/renderer@4.9.0`, JS puro): `files.ts` (nombres/ruta, única fuente), `fonts.ts` (`.woff` de `@fontsource/*@5.3.0`, sin copias), `theme.ts` (= tokens «obra» de `globals.css`, con test), `cv-document.tsx` (A4, una columna, ATS), `build-cv-pdf.ts` (`getCvPdf`, memo en memoria por contenido), `response.ts`.
+- Rutas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Rutas dinámicas: cada petición consulta la API (`getResume`; si falla, 5xx aunque haya PDF en memoria). Caché en memoria acotada con clave por contenido (`lang + hash del CV`), `ETag` y `Cache-Control: no-cache`. Si el render falla: `null` + `console.warn`, la ruta responde 404 y el botón se omite.
 - Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en «02 / arquitectura» del Perfil y solo si hay PDF. Los PDF no van en el sitemap.
 - Gotcha: el PDF no usa IBM Plex Mono: el `.woff` de fontsource tiene el glifo de espacio roto para fontkit (falla al medir). Solo Barlow Condensed 700 e IBM Plex Sans 400/600.
 
@@ -46,3 +50,10 @@ Herramientas en `scripts/parity/` (solo desarrollo; no se publican). Referencia:
 - `node scripts/parity/probe.mjs <ref|web> <perfil|servicios>` imprime la función para `evaluate_script` de Chrome DevTools; devuelve `getComputedStyle` + `getBoundingClientRect` por clave.
 - `npm run parity:diff -- a.png b.png` compara dos capturas por bandas de 400 px (umbral 3 %; código de salida 1 si alguna lo supera).
 - Los datos de `design-data.json` son el copy del diseño: nunca se mezclan con los fixtures «Ada Ejemplo» de los tests ni se publican.
+
+## Docker y despliegue
+- `Dockerfile` (Node 22 alpine, multi-stage): `deps` (`npm ci`) → `build` (`npm run build`, sin API) → `runtime` con `.next/standalone`, `.next/static` y `public`, usuario no root `app`,
+  `HOSTNAME=0.0.0.0`, `PORT=3000`, `HEALTHCHECK` contra `/api/health/` (con barra por `trailingSlash`) y `CMD ["node","server.js"]` en forma exec (SIGTERM llega a node). `.dockerignore` deja fuera `node_modules`, `.next`, `.env*`, `progress` y `design`.
+- Construir: `docker build -t cv-web .`; ejecutar: `docker run --rm -p 3000:3000 -e CV_API_URL=<api> -e SITE_URL=<origen> cv-web`. Variables de runtime: `CV_API_URL` y `SITE_URL`; no hay secretos propios de la web.
+- NAS: `deploy/docker-compose.yml` (único; `cv-db` + `cv-api` + `cv-web`, sin `.env`, valores `CAMBIA-…`, sin `ports`, redes `default` y `padelhub`). El túnel de Cloudflare apunta `floreslab.dev` → `http://cv-web:3000`.
+- CI: el job `docker` (`needs: test`, solo en `push`) construye amd64, hace un smoke con la API falsa de `scripts/parity/design-api.mjs` y publica amd64+arm64; los secretos solo vía `secrets.*`.

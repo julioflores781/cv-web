@@ -186,3 +186,16 @@
   width: 16px;
   height: 16px;
 }
+
+/* Empty state of a section whose list is empty: a quiet dashed frame, not an error. */
+.empty {
+  margin: 0;
+  width: 100%;
+  max-width: 560px;
+  box-sizing: border-box;
+  padding: 32px 24px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}

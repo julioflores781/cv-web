@@ -36,8 +36,6 @@ export interface ContactFormLabels {
 }
 
 interface ContactFormProps {
-  /** API base URL; comes from the server component, never from the environment. */
-  apiUrl: string;
   lang: Lang;
   /** Public contact address, offered as the way out of every error. */
   email: string;
@@ -67,7 +65,7 @@ function failureOf(result: SendResult, labels: ContactFormLabels['failures'], on
   }
 }
 
-export function ContactForm({ apiUrl, lang, email, labels }: ContactFormProps) {
+export function ContactForm({ lang, email, labels }: ContactFormProps) {
   const uid = useId();
   const engagement = useEngagement();
   const [values, setValues] = useState(EMPTY);
@@ -135,7 +133,6 @@ export function ContactForm({ apiUrl, lang, email, labels }: ContactFormProps) {
     setSending(true);
     aborter.current = new AbortController();
     const result = await sendContactMessage({
-      apiUrl,
       lang,
       values: { name: values.name, email: values.email, message: `${prefix}${values.message.trim()}` },
       website,

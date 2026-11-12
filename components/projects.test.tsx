@@ -86,14 +86,29 @@ describe('Projects', () => {
     expect(cards(container)).toHaveLength(0);
   });
 
-  it('CO-T31: an empty list renders nothing; with 1 or 3 projects the section title is the same', () => {
-    expect(view([]).container.innerHTML).toBe('');
+  it('CO-T31: with 1 or 3 projects the section title is the same', () => {
     const one = view([own]);
     const title = screen.getByRole('heading', { level: 2 }).textContent;
     one.unmount();
     view(projectsEs);
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe(title);
     expect(title).toBe('Proyectos');
+  });
+
+  it('T44: an empty list keeps #projects with its h2 and the empty text in its language, no featured, cards or links', () => {
+    for (const lang of ['es', 'en'] as const) {
+      const { container, unmount } = view([], {}, lang);
+      const dict = getDictionary(lang);
+      const section = container.querySelector('#projects') as HTMLElement;
+      expect(section).not.toBeNull();
+      expect(section.getAttribute('aria-labelledby')).toBe('projects-title');
+      expect(section.querySelector('h2#projects-title')?.textContent).toBe(dict.sections.projects.title);
+      expect(section).toHaveTextContent(dict.empty.projects);
+      expect(featured(container)).toBeNull();
+      expect(cards(container)).toHaveLength(0);
+      expect(container.querySelector('a, img, h3')).toBeNull();
+      unmount();
+    }
   });
 
   it('CO-T32: an own + public project with an image shows an img with alt, width, height and lazy loading (featured and card)', () => {

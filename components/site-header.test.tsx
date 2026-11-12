@@ -2,6 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import type { Route } from '@/lib/i18n/routes';
+import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
+import { HomeView } from './home-view';
 import { SiteHeader } from './site-header';
 
 const links = [{ href: '#contact', label: 'contacto' }];
@@ -9,6 +11,23 @@ const links = [{ href: '#contact', label: 'contacto' }];
 function renderHeader(route: Route, name = 'Ada Ejemplo') {
   return render(<SiteHeader route={route} name={name} links={links} dict={getDictionary(route.lang)} />);
 }
+
+describe('SiteHeader with empty sections', () => {
+  it('T46: the header of the 4 pages built by HomeView with empty lists links #projects and #contact, labelled in its language', () => {
+    for (const lang of ['es', 'en'] as const) {
+      for (const page of ['profile', 'services'] as const) {
+        const dict = getDictionary(lang);
+        const { container, unmount } = render(
+          <HomeView resume={lang === 'es' ? resumeEs : resumeEn} services={[]} projects={[]} route={{ lang, page }} siteUrl="https://cv.example.test" />,
+        );
+        const nav = within(container.querySelector('nav') as HTMLElement);
+        expect(nav.getByRole('link', { name: dict.nav.projects })).toHaveAttribute('href', '#projects');
+        expect(nav.getByRole('link', { name: dict.nav.contact })).toHaveAttribute('href', '#contact');
+        unmount();
+      }
+    }
+  });
+});
 
 describe('SiteHeader', () => {
   it('BA-T20: the toggle marks the current page with aria-current and links both pages of the language', () => {

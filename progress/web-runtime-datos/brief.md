@@ -1,0 +1,8 @@
+# web-runtime-datos
+
+Slug hijo 1 de `web-runtime` (depende de `web-runtime-ci`, ya APPROVED y sin cerrar: el humano pidió implementar todos los slugs seguidos y cerrarlos al final).
+Plan validado por el humano: `progress/web-runtime/analysis.md` (v2): **§2.1** (datos sin caché), **§2.6** (solo lo de `next.config`), **§3**, **§4** (A1, A2, A4, A9, A14–A17), **§5 «Slug 1»** (tests T6–T41, con la nota de migración) y **§7**.
+Brief global: `progress/web-runtime/brief.md`. Decisiones ya tomadas (no discutir): API caída o respuesta inválida → 500, sin caché ni respaldo entre peticiones; datos solo en la API; `trailingSlash` se mantiene; sin redirección de `cv.floreslab.dev`.
+Alcance: `next.config.ts` standalone; `lib/api` sin caché (config, content con `React.cache`, request 4 s + 1 reintento, borrado de `cache.ts`/respaldo/`source`/`ContentUnavailableError`); páginas `force-dynamic` sin `generateStaticParams`; el contacto, el PDF, robots/sitemap y el dominio NO se tocan aquí salvo lo mínimo para que compile (cada uno tiene su slug); harness de tests runtime (`tests/helpers/standalone.ts`, `tests/global-build.ts`); migración de `tests/build/build.test.ts` a `tests/runtime/*`.
+Reglas: sin duplicar código, sin git de escritura, Node 22 (`.nvmrc`), tests exactamente los del plan (extras anotados en `impl.md`), repo PÚBLICO (solo «Ada Ejemplo» y centinelas de test, nada real). Los tests runtime deben ser deterministas (sin carreras ni esperas arbitrarias) y no dejar procesos huérfanos.
+Si el slug resulta demasiado grande, el plan permite partirlo (T6–T24 primero, T25–T41 después): hazlo y anótalo, sin cambiar el orden ni el alcance.

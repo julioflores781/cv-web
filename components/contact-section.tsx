@@ -10,12 +10,10 @@ interface ContactSectionProps {
   route: Route;
   dict: Dictionary;
   index: number;
-  /** API base URL for the form's POST. */
-  apiUrl: string;
 }
 
 /** The contact section with its form; on the services page the picked blocks show above the links and prefix the message. */
-export function ContactSection({ contact, route, dict, index, apiUrl }: ContactSectionProps) {
+export function ContactSection({ contact, route, dict, index }: ContactSectionProps) {
   const { page, lang } = route;
   const { form } = dict;
   return (
@@ -25,7 +23,7 @@ export function ContactSection({ contact, route, dict, index, apiUrl }: ContactS
       dict={dict}
       index={index}
       selection={page === 'services' ? <SelectionLine label={form.selection} none={form.noSelection} /> : null}
-      form={<ContactForm apiUrl={apiUrl} lang={lang} email={contact.email} labels={{ ...form, message: form.message[page] }} />}
+      form={<ContactForm lang={lang} email={contact.email} labels={{ ...form, message: form.message[page] }} />}
     />
   );
 }
