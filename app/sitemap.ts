@@ -3,7 +3,7 @@ import { getConfig } from '@/lib/api';
 import { allRoutes } from '@/lib/i18n/routes';
 import { buildLanguageAlternates, pageUrl } from '@/lib/seo/metadata';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const { siteUrl } = getConfig();

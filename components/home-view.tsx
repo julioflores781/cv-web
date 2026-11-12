@@ -23,9 +23,9 @@ import { SectionHead } from './ui/section-head';
 
 interface HomeViewProps {
   resume: Resume;
-  /** The hexagon diagram; without it (or without ports) the hero shows no plane. */
+  /** The hexagon diagram; without it (or without ports) the hero plane shows its empty state. */
   architecture?: Architecture | null;
-  /** Services of the services page; without any there is no section, aside or link. */
+  /** Services of the services page; without any the section shows its empty state (no aside, no selection). */
   services?: readonly Service[];
   /** Projects; the first one is the featured case. */
   projects?: readonly Project[];
@@ -35,12 +35,10 @@ interface HomeViewProps {
   pdfHref?: string | null;
   route: Route;
   siteUrl: string;
-  /** API base URL, only used as the destination of the contact form. */
-  apiUrl: string;
 }
 
 /** One whole page (profile or services, in one language). Pure: all data arrives through props. */
-export function HomeView({ resume, architecture = null, services = [], projects = [], projectImages = {}, pdfHref = null, route, siteUrl, apiUrl }: HomeViewProps) {
+export function HomeView({ resume, architecture = null, services = [], projects = [], projectImages = {}, pdfHref = null, route, siteUrl }: HomeViewProps) {
   const { lang, page } = route;
   const dict = getDictionary(lang);
   const isProfile = page === 'profile';
@@ -51,20 +49,19 @@ export function HomeView({ resume, architecture = null, services = [], projects 
   // Section numbers follow the sections actually rendered, so they never skip.
   const hasServices = !isProfile && services.length > 0;
   const hasProcess = !isProfile && dict.process !== undefined;
-  const hasProjects = projects.length > 0;
   const numbered = [
     hasTrajectory ? 'trajectory' : null,
     isProfile ? 'architecture' : null,
-    hasServices ? 'services' : null,
+    isProfile ? null : 'services',
     hasProcess ? 'process' : null,
-    hasProjects ? 'projects' : null,
+    'projects',
     'contact',
   ].filter(Boolean);
   const indexOf = (id: string) => numbered.indexOf(id) + 1;
 
-  // The header only links to sections that exist.
+  // Projects and contact always render (projects with an empty state), so both links always resolve.
   const links: NavLink[] = [
-    ...(hasProjects ? [{ href: '#projects', label: dict.nav.projects }] : []),
+    { href: '#projects', label: dict.nav.projects },
     { href: '#contact', label: dict.nav.contact },
   ];
   const body = (
@@ -74,8 +71,7 @@ export function HomeView({ resume, architecture = null, services = [], projects 
         route={route}
         dict={dict}
         hasExperience={isProfile && experience.length > 0}
-        hasProjects={hasProjects}
-        plane={architecture ? buildHexPlane(architecture, dict) : null}
+        plane={buildHexPlane(architecture, dict)}
       >
         <Cajetin profile={profile} experience={experience} route={route} dict={dict} />
       </Hero>
@@ -104,10 +100,10 @@ export function HomeView({ resume, architecture = null, services = [], projects 
           </SectionShell>
         </>
       ) : null}
-      {hasServices ? <ServicesSection services={services} lang={lang} dict={dict} index={indexOf('services')} /> : null}
+      {!isProfile ? <ServicesSection services={services} lang={lang} dict={dict} index={indexOf('services')} /> : null}
       {hasProcess && dict.process ? <Process process={dict.process} index={indexOf('process')} /> : null}
       <Projects projects={projects} images={projectImages} lang={lang} dict={dict} index={indexOf('projects')} />
-      <ContactSection contact={resume.contact} route={route} dict={dict} index={indexOf('contact')} apiUrl={apiUrl} />
+      <ContactSection contact={resume.contact} route={route} dict={dict} index={indexOf('contact')} />
     </>
   );
 

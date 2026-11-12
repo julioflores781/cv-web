@@ -3,7 +3,7 @@ import https from 'node:https';
 import type { Lang } from '@/lib/i18n/config';
 import { parseProblem } from '@/lib/problem';
 import { getConfig } from './config';
-import { ApiFetchError, ContentUnavailableError, describeError } from './errors';
+import { ApiFetchError, describeError } from './errors';
 
 export interface RequestOptions {
   baseUrl?: string;
@@ -12,30 +12,24 @@ export interface RequestOptions {
   retryDelayMs?: number;
 }
 
-/** One API resource: where it lives, how to validate it and how its fallback copy is named. */
+/** One API resource: where it lives and how to validate it. */
 export interface Resource<T> {
   /** Label used in errors and warnings, e.g. `Architecture`. */
   name: string;
-  /** Fallback file prefix: `<file>-<lang>.json`. */
-  file: string;
   /** Path under the API base, e.g. `/api/v1/architecture`. */
   path: string;
   /** Validates an untrusted payload; `null` when it is not valid. */
   parse: (raw: unknown) => T | null;
   /** Extra check that the payload belongs to `lang`; returns the reason when it does not. */
   mismatch?: (value: T, lang: Lang) => string | null;
-  /** A valid but empty payload (the section is then omitted). */
-  isEmpty?: (value: T) => boolean;
   /** Error type for failures of this resource (defaults to `ApiFetchError`). */
   fail?: (lang: Lang, message: string, details: ErrorDetails) => ApiFetchError;
-  /** Error type when there is no fallback either (defaults to `ContentUnavailableError`). */
-  unavailable?: (lang: Lang, cause: string, cacheFile: string) => ContentUnavailableError;
 }
 
 type ErrorDetails = ConstructorParameters<typeof ApiFetchError>[3];
 
-const DEFAULT_TIMEOUT_MS = 10_000;
-const DEFAULT_RETRIES = 2;
+export const DEFAULT_TIMEOUT_MS = 4_000;
+export const DEFAULT_RETRIES = 1;
 const DEFAULT_RETRY_DELAY_MS = 500;
 
 function readProblemCode(body: string): string | undefined {
@@ -47,24 +41,34 @@ function readProblemCode(body: string): string | undefined {
   }
 }
 
+export interface HttpRequestInit {
+  method?: 'GET' | 'POST';
+  headers?: Record<string, string>;
+  body?: string;
+  signal: AbortSignal;
+}
+
 /**
- * GET over `node:http(s)` instead of `fetch`: Next.js patches `fetch` and keeps every response in
- * `.next/cache/fetch-cache` (persisted by Cloudflare Pages), so a rebuild could publish stale content; `cache: 'no-store'`
- * is not an option because it makes the static export fall back to the saved copy. This transport is never cached.
+ * Plain `node:http(s)` instead of `fetch`: Next.js patches `fetch` and may keep responses in its data cache. This
+ * transport is never cached, so every render sees what the API answers right now. Sends exactly the given headers
+ * (plus the ones Node itself needs: Host, Connection and Content-Length).
  */
-function httpGet(url: string, signal: AbortSignal): Promise<{ status: number; body: string }> {
+export function httpRequest(url: string, { method = 'GET', headers, body, signal }: HttpRequestInit): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
-    const get = url.startsWith('https:') ? https.get : http.get;
-    const request = get(url, { signal, headers: { Accept: 'application/json' } }, (response) => {
+    const send = url.startsWith('https:') ? https.request : http.request;
+    const request = send(url, { method, signal, ...(headers ? { headers } : {}) }, (response) => {
       response.setEncoding('utf8');
-      let body = '';
-      response.on('data', (chunk: string) => (body += chunk));
-      response.on('end', () => resolve({ status: response.statusCode ?? 0, body }));
+      let text = '';
+      response.on('data', (chunk: string) => (text += chunk));
+      response.on('end', () => resolve({ status: response.statusCode ?? 0, body: text }));
       response.on('error', reject);
     });
     request.on('error', reject);
+    request.end(body);
   });
 }
+
+const httpGet = (url: string, signal: AbortSignal) => httpRequest(url, { headers: { Accept: 'application/json' }, signal });
 
 async function attempt<T>(resource: Resource<T>, lang: Lang, url: string, timeoutMs: number): Promise<T> {
   const fail = (message: string, details: ErrorDetails = {}): ApiFetchError =>

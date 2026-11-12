@@ -87,6 +87,8 @@ export interface Dictionary {
   education: { education: string; certificate: string; course: string };
   layers: { label: string; adapters: Layer; ports: Layer; domain: Layer };
   stack: { label: string };
+  /** Shown inside a section whose list came back empty from the API (not an error). */
+  empty: { services: string; projects: string; architecture: string };
   plane: {
     /** Mono tag of the core hexagon. */
     core: string;
@@ -221,6 +223,11 @@ const es: Dictionary = {
     },
   },
   stack: { label: 'stack' },
+  empty: {
+    services: 'Los servicios se publicarán aquí en breve. Mientras tanto, cuéntame tu proyecto en el formulario de contacto.',
+    projects: 'Aún no hay proyectos publicados. Pronto añadiré los primeros casos.',
+    architecture: 'El diagrama de arquitectura aún no está disponible.',
+  },
   plane: {
     core: 'core/',
     groupLabel: 'Puertos del hexágono',
@@ -363,6 +370,11 @@ const en: Dictionary = {
     },
   },
   stack: { label: 'stack' },
+  empty: {
+    services: 'Services will be published here soon. In the meantime, tell me about your project in the contact form.',
+    projects: 'No projects are published yet. The first cases will be added soon.',
+    architecture: 'The architecture diagram is not available yet.',
+  },
   plane: {
     core: 'core/',
     groupLabel: 'Hexagon ports',

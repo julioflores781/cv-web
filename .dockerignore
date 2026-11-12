@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+.github
+.env*
+.DS_Store
+*.tsbuildinfo
+progress
+design
+deploy
+.claude
+Dockerfile
+.dockerignore

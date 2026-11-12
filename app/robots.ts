@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getConfig } from '@/lib/api';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
 export default function robots(): MetadataRoute.Robots {
   return {

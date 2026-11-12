@@ -1,59 +1,20 @@
+import { cache } from 'react';
 import type { Lang } from '@/lib/i18n/config';
-import { cachePath, readJson, writeJson } from './cache';
-import { getConfig } from './config';
-import { ContentUnavailableError, describeError } from './errors';
+import { describeError } from './errors';
 import { requestJson, type RequestOptions, type Resource } from './request';
-import type { ContentSource } from './types';
 
-export interface ContentOptions extends RequestOptions {
-  cacheDir?: string;
-}
-
-export interface ContentResult<T> {
-  data: T;
-  source: ContentSource;
-}
-
-const memo = new Map<string, Promise<ContentResult<unknown>>>();
-
-async function load<T>(resource: Resource<T>, lang: Lang, options: ContentOptions): Promise<ContentResult<T>> {
-  const cacheDir = options.cacheDir ?? getConfig().cacheDir;
-  let cause: string;
+async function read<T>(resource: Resource<T>, lang: Lang, options?: RequestOptions): Promise<T> {
   try {
-    const data = await requestJson(resource, lang, options);
-    await writeJson(cacheDir, resource.file, lang, data);
-    // A valid empty answer is authoritative: the section is omitted, and the empty copy becomes the fallback.
-    if (resource.isEmpty?.(data)) {
-      console.warn(`[cv-web] ${resource.name} (${lang}): the API returned no content; section omitted.`);
-    }
-    return { data, source: 'api' };
+    return await requestJson(resource, lang, options);
   } catch (error) {
-    cause = describeError(error);
+    // The page then answers 500; the reason (never shown to the visitor) goes to the server log.
+    console.error(`[cv-web] ${resource.name} (${lang}) unavailable: ${describeError(error)}`);
+    throw error;
   }
-
-  const saved = await readJson(cacheDir, resource.file, lang, (raw) => {
-    const value = resource.parse(raw);
-    return value !== null && resource.mismatch?.(value, lang) == null ? value : null;
-  });
-  if (saved === null) {
-    const file = cachePath(cacheDir, resource.file, lang);
-    throw resource.unavailable ? resource.unavailable(lang, cause, file) : new ContentUnavailableError(resource.name, lang, cause, file);
-  }
-  console.warn(`[cv-web] API unavailable for "${lang}" (${cause}); building from the saved fallback copy.`);
-  return { data: saved, source: 'cache' };
 }
 
-/** API first, saved copy second, otherwise throws. One request per (resource, language). */
-export function getContent<T>(resource: Resource<T>, lang: Lang, options: ContentOptions = {}): Promise<ContentResult<T>> {
-  const key = `${resource.file}:${lang}`;
-  const existing = memo.get(key);
-  if (existing) return existing as Promise<ContentResult<T>>;
-  const pending = load(resource, lang, options);
-  memo.set(key, pending);
-  return pending;
-}
-
-/** Test helper: forgets memoized results. */
-export function resetContentMemo(): void {
-  memo.clear();
-}
+/**
+ * One API read per (resource, language, options) inside a single React render (`generateMetadata` and `Page` share it).
+ * There is no cache between requests: every render reads the API again, and any failure throws.
+ */
+export const getContent = cache(read);

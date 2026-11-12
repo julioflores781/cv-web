@@ -1,4 +1,4 @@
-import { startServer, json, type TestServer } from './http-server';
+import { startServer, json, type Handler, type TestServer } from './http-server';
 import { architectureFor, projectsFor, servicesFor } from '@/tests/fixtures/content';
 import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import type { Lang } from '@/lib/i18n/config';
@@ -32,9 +32,18 @@ export interface FakeApiOptions {
   services?: (lang: Lang) => unknown;
   /** Body for `GET /api/v1/projects?lang=<lang>`; defaults to the «Ada Ejemplo» projects. */
   projects?: (lang: Lang) => unknown;
+  /** Handler for `POST /api/v1/contact/messages` (the request body is drained first); without it the route answers 404. */
+  contact?: Handler;
+  /** Called first on every request; a reply short-circuits the fixtures (failures, bad payloads). Closures make it switchable mid-test. */
+  respond?: (resource: string, lang: Lang) => FakeReply | undefined;
 }
 
-/** Local stand-in for the CV API (`/resume`, `/architecture`, `/services` and `/projects`). The real API is never contacted. */
+export interface FakeReply {
+  status: number;
+  body: unknown;
+}
+
+/** Local stand-in for the CV API (`/resume`, `/architecture`, `/services`, `/projects` and the readiness probe). The real API is never contacted. */
 export function startFakeApi(options: FakeApiOptions = {}): Promise<TestServer> {
   const resume = options.resume ?? dirtyResume;
   const architecture = options.architecture ?? architectureFor;
@@ -43,10 +52,20 @@ export function startFakeApi(options: FakeApiOptions = {}): Promise<TestServer> 
   return startServer((req, res) => {
     const url = new URL(req.url ?? '', 'http://x');
     const lang: Lang = url.searchParams.get('lang') === 'en' ? 'en' : 'es';
-    if (url.pathname === '/api/v1/resume') json(res, 200, resume(lang));
+    const resource = url.pathname.replace('/api/v1/', '');
+    if (options.contact && req.method === 'POST' && url.pathname === '/api/v1/contact/messages') {
+      const { contact } = options;
+      req.resume();
+      req.on('end', () => contact(req, res));
+      return;
+    }
+    const forced = options.respond?.(resource, lang);
+    if (forced) json(res, forced.status, forced.body);
+    else if (url.pathname === '/api/v1/resume') json(res, 200, resume(lang));
     else if (url.pathname === '/api/v1/architecture') json(res, 200, architecture(lang));
     else if (url.pathname === '/api/v1/services') json(res, 200, services(lang));
     else if (url.pathname === '/api/v1/projects') json(res, 200, projects(lang));
+    else if (url.pathname === '/q/health/ready') json(res, 200, { status: 'UP', checks: [] });
     else json(res, 404, { title: 'Not found', detail: url.pathname, status: 404, code: 'NOT_FOUND' });
   });
 }

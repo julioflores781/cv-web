@@ -1,18 +1,18 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resumeEs } from '@/tests/fixtures/resume';
-import { getCvPdf, resetCvPdfMemo, type PdfRenderer } from './build-cv-pdf';
-import { cvPdfResponse } from './response';
+import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
+import { MAX_CACHED_PDFS, cvPdfCacheSize, getCvPdf, resetCvPdfMemo, type PdfRenderer } from './build-cv-pdf';
 
 const getResume = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api', () => ({ getResume }));
 
 const PDF = Buffer.from('%PDF-1.7 fake');
+const withSummary = (summary: string) => ({ ...resumeEs, profile: { ...resumeEs.profile, summary } });
 
 beforeEach(() => {
   resetCvPdfMemo();
   getResume.mockReset();
-  getResume.mockResolvedValue({ resume: resumeEs, source: 'api' });
+  getResume.mockResolvedValue({ resume: resumeEs });
 });
 
 afterEach(() => vi.restoreAllMocks());
@@ -26,38 +26,66 @@ describe('getCvPdf', () => {
     expect(warn.mock.calls[0]?.[0]).toMatch(/PDF \(es\).*boom/);
   });
 
-  it('PD-T15: a working renderer runs once per language, however many calls', async () => {
+  it('T61: two calls with the same content render once; another language renders again', async () => {
     const render = vi.fn<PdfRenderer>().mockResolvedValue(PDF);
-    const [a, b] = await Promise.all([getCvPdf('es', render), getCvPdf('es', render)]);
-    expect(a).toBe(PDF);
-    expect(b).toBe(PDF);
-    await getCvPdf('es', render);
+    const first = await getCvPdf('es', render);
+    const second = await getCvPdf('es', render);
+    expect(first?.buffer).toBe(PDF);
+    expect(second?.hash).toBe(first?.hash);
     expect(render).toHaveBeenCalledTimes(1);
+    getResume.mockResolvedValue({ resume: resumeEn });
     await getCvPdf('en', render);
     expect(render).toHaveBeenCalledTimes(2);
   });
 
-  it('PD-T16: when getResume fails without a fallback, getCvPdf propagates the error (the data source is missing)', async () => {
-    getResume.mockRejectedValue(new Error('Resume (es) unavailable'));
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    await expect(getCvPdf('es', vi.fn<PdfRenderer>())).rejects.toThrow(/unavailable/);
-    expect(warn).not.toHaveBeenCalled();
+  it('T63: with more distinct contents than the cap the map never exceeds it and drops the least recently used', async () => {
+    const render = vi.fn<PdfRenderer>().mockResolvedValue(PDF);
+    const call = async (summary: string) => {
+      getResume.mockResolvedValue({ resume: withSummary(summary) });
+      await getCvPdf('es', render);
+    };
+    for (const summary of ['a', 'b', 'c', 'd']) await call(summary);
+    expect(cvPdfCacheSize()).toBe(MAX_CACHED_PDFS);
+    await call('a'); // touches «a»: «b» is now the oldest
+    expect(render).toHaveBeenCalledTimes(4);
+    await call('e');
+    expect(cvPdfCacheSize()).toBe(MAX_CACHED_PDFS);
+    expect(render).toHaveBeenCalledTimes(5);
+    await call('a'); // still cached
+    expect(render).toHaveBeenCalledTimes(5);
+    await call('b'); // evicted: renders again
+    expect(render).toHaveBeenCalledTimes(6);
+    expect(cvPdfCacheSize()).toBe(MAX_CACHED_PDFS);
   });
 
-  it('PD-T17: the response is application/pdf with the %PDF- body, or a plain-text 404 when there is no PDF', async () => {
-    const ok = await getCvPdf('es', () => Promise.resolve(PDF));
-    expect(ok).not.toBeNull();
-    const response = await cvPdfResponse('es');
-    expect(response.status).toBe(200);
-    expect(response.headers.get('Content-Type')).toBe('application/pdf');
-    expect(Buffer.from(await response.arrayBuffer()).subarray(0, 5).toString()).toBe('%PDF-');
+  it('T64: two simultaneous calls with the same key invoke the renderer once', async () => {
+    let release: (buffer: Buffer) => void = () => undefined;
+    const render = vi.fn<PdfRenderer>().mockReturnValue(new Promise<Buffer>((resolve) => (release = resolve)));
+    const both = Promise.all([getCvPdf('es', render), getCvPdf('es', render)]);
+    await vi.waitFor(() => expect(render).toHaveBeenCalledTimes(1));
+    release(PDF);
+    const [a, b] = await both;
+    expect(a?.buffer).toBe(PDF);
+    expect(b?.buffer).toBe(PDF);
+    expect(render).toHaveBeenCalledTimes(1);
+  });
 
-    resetCvPdfMemo();
-    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    // A resume the document cannot render makes the real renderer path fail.
-    getResume.mockResolvedValue({ resume: {}, source: 'api' });
-    const missing = await cvPdfResponse('en');
-    expect(missing.status).toBe(404);
-    expect(missing.headers.get('Content-Type')).toMatch(/^text\/plain/);
+  it('T65: a failing renderer gives null with a warning and is not stored, so the next call renders again', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const render = vi.fn<PdfRenderer>().mockRejectedValueOnce(new Error('boom')).mockResolvedValue(PDF);
+    await expect(getCvPdf('es', render)).resolves.toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(cvPdfCacheSize()).toBe(0);
+    await expect(getCvPdf('es', render)).resolves.toMatchObject({ buffer: PDF });
+    expect(render).toHaveBeenCalledTimes(2);
+  });
+
+  it('PD-T16: when getResume fails, getCvPdf propagates the error even with a PDF in memory', async () => {
+    const render = vi.fn<PdfRenderer>().mockResolvedValue(PDF);
+    await getCvPdf('es', render);
+    getResume.mockRejectedValue(new Error('Resume (es) unavailable'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await expect(getCvPdf('es', render)).rejects.toThrow(/unavailable/);
+    expect(warn).not.toHaveBeenCalled();
   });
 });

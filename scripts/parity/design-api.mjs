@@ -15,6 +15,8 @@ const RESOURCES = ['resume', 'architecture', 'services', 'projects'];
  * @param {string | null} lang `es` (default) or `en`
  */
 export function designResponse(pathname, lang) {
+  // Quarkus readiness (the web's /api/health/ and the Docker smoke test depend on it).
+  if (pathname === '/q/health/ready') return { status: 200, body: { status: 'UP', checks: [] } };
   const language = lang ?? 'es';
   if (!(language in DATA)) return { status: 400, body: { title: 'Invalid language', status: 400, code: 'LANG_INVALID' } };
   const match = /^\/api\/v1\/([a-z]+)\/?$/.exec(pathname);

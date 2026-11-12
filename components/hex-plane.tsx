@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import type { AdapterStatus } from '@/lib/api/types';
 import type { HexModel, HexPort } from '@/lib/architecture/model';
 import { POSITIONS } from '@/lib/architecture/slots';
+import { HexOutline } from './hex-outline';
 import { StatusShape } from './ui/status-shape';
 import styles from './hex-plane.module.css';
 
@@ -96,16 +97,7 @@ export function HexPlane({ model, labels }: HexPlaneProps) {
     <div className={styles.plane} data-layout={model.layout} data-probe="plane">
       <div className={styles.box}>
         <svg className={styles.svg} viewBox="0 0 100 100" aria-hidden="true" data-probe="plano">
-          <polygon points="50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="0.25" />
-          <polygon points="50,12 82.9,31 82.9,69 50,88 17.1,69 17.1,31" fill="none" stroke="currentColor" strokeOpacity="0.55" strokeWidth="0.3" />
-          <polygon
-            points="50,26 70.8,38 70.8,62 50,74 29.2,62 29.2,38"
-            fill="none"
-            stroke="currentColor"
-            strokeOpacity="0.55"
-            strokeWidth="0.3"
-            strokeDasharray="1.2 1.2"
-          />
+          <HexOutline />
           {radial
             ? model.slots.map((slot) => {
                 const [x, y] = pointOf(slot);
