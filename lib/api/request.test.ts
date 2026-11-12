@@ -1,9 +1,8 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { closedPortUrl, json, startServer, type TestServer } from '@/tests/helpers/http-server';
-import { ApiFetchError, ResumeFetchError } from './errors';
-import { fetchResume } from './client';
-import { requestJson, type Resource } from './request';
+import { ApiFetchError } from './errors';
+import { DEFAULT_RETRIES, DEFAULT_TIMEOUT_MS, requestJson, type Resource } from './request';
 
 let server: TestServer | undefined;
 afterEach(async () => {
@@ -14,7 +13,6 @@ afterEach(async () => {
 
 const THING: Resource<{ ok: true }> = {
   name: 'Thing',
-  file: 'thing',
   path: '/api/v1/thing',
   parse: (raw) => (typeof raw === 'object' && raw !== null && 'ok' in raw ? { ok: true } : null),
 };
@@ -28,7 +26,7 @@ describe('requestJson', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('extra (PA): a refused connection is reported with its cause (ECONNREFUSED), never an empty message', async () => {
+  it('T22: a refused connection is reported with its cause (ECONNREFUSED), never an empty message', async () => {
     const url = await closedPortUrl();
     const error = await requestJson(THING, 'es', { baseUrl: url, retries: 0, ...FAST }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(ApiFetchError);
@@ -54,11 +52,31 @@ describe('requestJson', () => {
     expect(server.requests).toHaveLength(1);
   });
 
-  it('HX-T8: fetchResume keeps its contract on top of the generic transport (T1–T22 stay green)', async () => {
-    server = await startServer((_req, res) => json(res, 404, { title: 't', detail: 'd', status: 404, code: 'RESUME_NOT_FOUND' }));
-    const error = await fetchResume('es', { baseUrl: server.url, retries: 0 }).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ResumeFetchError);
-    expect(error).toBeInstanceOf(ApiFetchError);
-    expect(server.requests).toEqual(['/api/v1/resume?lang=es']);
+  it('T19: the defaults are a 4000 ms timeout and 1 retry', () => {
+    expect(DEFAULT_TIMEOUT_MS).toBe(4000);
+    expect(DEFAULT_RETRIES).toBe(1);
+  });
+
+  it('T20: a 5xx followed by a 200 is retried once and returns the data; a 4xx is not retried', async () => {
+    let calls = 0;
+    server = await startServer((_req, res) => (calls++ === 0 ? json(res, 503, { code: 'UNEXPECTED' }) : json(res, 200, { ok: true })));
+    await expect(requestJson(THING, 'es', { baseUrl: server.url, ...FAST })).resolves.toEqual({ ok: true });
+    expect(server.requests).toHaveLength(2);
+    await server.close();
+
+    server = await startServer((_req, res) => json(res, 404, { code: 'NOT_FOUND' }));
+    await expect(requestJson(THING, 'es', { baseUrl: server.url, ...FAST })).rejects.toBeInstanceOf(ApiFetchError);
+    expect(server.requests).toHaveLength(1);
+  });
+
+  it('T21: a server that never answers fails around the default timeout with «timed out after 4000 ms»', async () => {
+    server = await startServer(() => {
+      // Never answers.
+    });
+    const started = Date.now();
+    await expect(requestJson(THING, 'es', { baseUrl: server.url, retries: 0 })).rejects.toThrow(/timed out after 4000 ms/);
+    const elapsed = Date.now() - started;
+    expect(elapsed).toBeGreaterThanOrEqual(3900);
+    expect(elapsed).toBeLessThan(6000);
   });
 });

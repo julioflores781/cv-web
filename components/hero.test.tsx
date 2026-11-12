@@ -6,9 +6,9 @@ import { minimalResume, resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import type { Profile } from '@/lib/api/types';
 import { Hero } from './hero';
 
-function renderHero(profile: Profile, route: Route, hasExperience = true, hasProjects = false) {
+function renderHero(profile: Profile, route: Route, hasExperience = true) {
   return render(
-    <Hero profile={profile} route={route} dict={getDictionary(route.lang)} hasExperience={hasExperience} hasProjects={hasProjects} />,
+    <Hero profile={profile} route={route} dict={getDictionary(route.lang)} hasExperience={hasExperience} />,
   );
 }
 
@@ -61,15 +61,11 @@ describe('Hero', () => {
     expect(spain.querySelector('[data-probe="eyebrow"]')?.textContent).toBe(`${resumeEn.profile.label} · Spain`);
   });
 
-  it('extra (PA): the services hero has «Ver proyectos» to #projects, as in the design, only when the projects section exists', () => {
-    const route = { lang: 'es', page: 'services' } as const;
-    renderHero(resumeEs.profile, route, false, true);
+  it('extra (PA): the services hero has «Ver proyectos» to #projects (the section always exists), the profile hero does not', () => {
+    renderHero(resumeEs.profile, { lang: 'es', page: 'services' }, false);
     expect(screen.getByRole('link', { name: 'Ver proyectos' })).toHaveAttribute('href', '#projects');
     cleanup();
-    renderHero(resumeEs.profile, route, false, false);
-    expect(screen.queryByRole('link', { name: 'Ver proyectos' })).toBeNull();
-    cleanup();
-    renderHero(resumeEs.profile, { lang: 'es', page: 'profile' }, true, true);
+    renderHero(resumeEs.profile, { lang: 'es', page: 'profile' }, true);
     expect(screen.queryByRole('link', { name: 'Ver proyectos' })).toBeNull();
   });
 });

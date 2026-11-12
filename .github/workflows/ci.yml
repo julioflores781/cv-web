@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Only PR runs are cancelled; a run on main is never interrupted half way.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Lint, typecheck and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Includes the tests that run `next build` against a fake API: no real API or secrets are needed.
+      - name: Tests
+        run: npm test
+
+  docker:
+    name: Docker image
+    needs: test # only runs when lint, typecheck and every test pass
+    if: github.event_name == 'push' # fork PRs never see the secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 45 # the arm64 build runs under QEMU
+    permissions:
+      contents: read
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - name: Check Docker Hub credentials
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::error::Missing secrets DOCKERHUB_USERNAME and/or DOCKERHUB_TOKEN (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Image tags and metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/cv-web
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      # 1) Build once (amd64) and keep it local, to test it before publishing anything.
+      - name: Build image for testing
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: cv-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # The web needs a CV API: a throwaway fake one (the design data, never the real CV) serves it on a disposable network.
+      - name: Smoke test the container
+        run: |
+          docker network create cvnet
+          docker run -d --name cv-api --network cvnet -v "$PWD/scripts/parity:/app:ro" -w /app \
+            node:22-alpine node design-api.mjs --port 8080
+          docker run -d --name cv-web --network cvnet -p 3000:3000 \
+            -e CV_API_URL=http://cv-api:8080 -e SITE_URL=https://floreslab.dev cv-web:ci
+          fail() {
+            echo "::error::$1"
+            docker logs cv-api
+            docker logs cv-web
+            exit 1
+          }
+          healthy=false
+          for i in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' cv-web)" = healthy ]; then healthy=true; break; fi
+            sleep 1
+          done
+          [ "$healthy" = true ] || fail "cv-web did not become healthy in 60 s"
+          curl -fsS http://localhost:3000/api/health/ | grep -q '"status":"ok"' || fail "/api/health/ is not ok"
+          curl -fsS http://localhost:3000/ | grep -q '<h1' || fail "/ has no <h1>"
+          curl -fsS http://localhost:3000/en/ | grep -q 'lang="en"' || fail "/en/ has no lang=en"
+          curl -fsS http://localhost:3000/sitemap.xml | grep -q 'floreslab.dev' || fail "sitemap.xml has no floreslab.dev"
+          [ "$(curl -fsS http://localhost:3000/cv-julio-flores-es.pdf | head -c 5)" = '%PDF-' ] || fail "the PDF is not a PDF"
+          # SIGTERM must stop the server in under 10 s (not wait for the SIGKILL of the timeout). Node runs as PID 1 without
+          # a signal handler, so it dies by the signal itself: exit 143 (128 + 15); 0 is accepted too. 137 (SIGKILL) is a failure.
+          start=$(date +%s)
+          docker stop -t 10 cv-web >/dev/null
+          elapsed=$(( $(date +%s) - start ))
+          code=$(docker inspect -f '{{.State.ExitCode}}' cv-web)
+          { [ "$code" = 0 ] || [ "$code" = 143 ]; } && [ "$elapsed" -lt 10 ] || fail "SIGTERM: exit $code after ${elapsed}s"
+          docker rm -f cv-web cv-api
+          docker network rm cvnet
+
+      # 2) If the container answers well, publish it (amd64 + arm64) reusing the cache of the previous build.
+      - name: Publish to Docker Hub
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+
+      - name: Check the published manifest
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          manifest=$(docker buildx imagetools inspect "$(echo "$TAGS" | head -n 1)")
+          echo "$manifest"
+          echo "$manifest" | grep -q 'linux/amd64' && echo "$manifest" | grep -q 'linux/arm64'
+
+      - name: Published image summary
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          {
+            echo "## Published image"
+            echo
+            echo "Image: \`${DOCKERHUB_USERNAME}/cv-web\` (linux/amd64, linux/arm64)"
+            echo
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

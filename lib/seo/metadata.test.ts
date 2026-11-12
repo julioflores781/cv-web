@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { minimalResume, resumeEn, resumeEs } from '@/tests/fixtures/resume';
+import { getConfig } from '@/lib/api';
 import { buildMetadata } from './metadata';
 
 const SITE = 'https://cv.example.test';
@@ -10,6 +11,17 @@ const servicesEs = { lang: 'es', page: 'services' } as const;
 const servicesEn = { lang: 'en', page: 'services' } as const;
 
 describe('buildMetadata', () => {
+  it('T87: with the default siteUrl, canonical, alternates and Open Graph urls start with https://floreslab.dev', () => {
+    const { siteUrl } = getConfig({});
+    expect(siteUrl).toBe('https://floreslab.dev');
+    for (const [resume, route] of [[resumeEs, profileEs], [resumeEs, servicesEs], [resumeEn, profileEn], [resumeEn, servicesEn]] as const) {
+      const meta = buildMetadata(resume, route, siteUrl);
+      const urls = [meta.alternates?.canonical, ...Object.values(meta.alternates?.languages ?? {}), (meta.openGraph as { url?: string }).url];
+      expect(urls).toHaveLength(5);
+      for (const url of urls) expect(String(url).startsWith('https://floreslab.dev/')).toBe(true);
+    }
+  });
+
   it('BA-T4: the ES services page has its own title and description, canonical SITE/servicios/ and alternate SITE/en/services/', () => {
     const services = buildMetadata(resumeEs, servicesEs, SITE);
     const profile = buildMetadata(resumeEs, profileEs, SITE);

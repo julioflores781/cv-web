@@ -11,21 +11,39 @@ const SITE = 'https://cv.example.test';
 const columns = (container: HTMLElement) => container.querySelector('[data-probe="hero-inner"]')?.getAttribute('data-columns');
 
 describe('buildHexPlane', () => {
-  it('HX-T36: without ports, or with ports that have no adapters, there is no plane, legend or panel and the hero has one column', () => {
-    expect(buildHexPlane(EMPTY_ARCHITECTURE, dict)).toBeNull();
+  it('HX-T36 / T51 / T45: without ports, or with ports that have no adapters, the plane block shows the empty state: no nodes, legend, panel or noscript', () => {
     const withoutAdapters = { core: { name: 'C', description: null }, ports: [{ id: 'p', name: 'P', description: null, adapters: [] }] };
-    expect(buildHexPlane(withoutAdapters, dict)).toBeNull();
     expect(buildHexPlane(architectureOf(2), dict)).not.toBeNull();
 
     for (const architecture of [EMPTY_ARCHITECTURE, withoutAdapters, null]) {
       for (const page of ['profile', 'services'] as const) {
         const { container, unmount } = render(
-          <HomeView resume={resumeEs} architecture={architecture} route={{ lang: 'es', page }} siteUrl={SITE} apiUrl="http://api.example.test" />,
+          <HomeView resume={resumeEs} architecture={architecture} route={{ lang: 'es', page }} siteUrl={SITE} />,
         );
-        expect(columns(container), page).toBe('1');
-        for (const probe of ['plane', 'panel', 'legend', 'core']) expect(container.querySelector(`[data-probe="${probe}"]`)).toBeNull();
+        expect(columns(container), page).toBe('2');
+        const plane = container.querySelector('[data-probe="plane-empty"]') as HTMLElement;
+        expect(plane.getAttribute('role')).toBe('region');
+        expect(plane.getAttribute('aria-label')).toBeTruthy();
+        expect(plane).toHaveTextContent(dict.empty.architecture);
+        for (const probe of ['plane', 'panel', 'legend', 'node']) expect(container.querySelector(`[data-probe="${probe}"]`)).toBeNull();
+        expect(plane.querySelector('button, noscript')).toBeNull();
         unmount();
       }
+    }
+  });
+
+  it('T45: with a core name only the central hexagon is drawn; without it only the text', () => {
+    const withCore = render(buildHexPlane({ core: { name: 'Núcleo de ejemplo', description: null }, ports: [] }, dict));
+    expect(withCore.container.querySelector('[data-probe="core"]')).toHaveTextContent('Núcleo de ejemplo');
+    expect(withCore.container.querySelectorAll('svg polygon')).toHaveLength(3);
+    expect(withCore.container.querySelector('svg line, svg rect, button')).toBeNull();
+    expect(withCore.container).toHaveTextContent(dict.empty.architecture);
+    withCore.unmount();
+    for (const architecture of [EMPTY_ARCHITECTURE, { core: { name: '   ', description: null }, ports: [] }, null]) {
+      const bare = render(buildHexPlane(architecture, dict));
+      expect(bare.container.querySelector('svg, [data-probe="core"]')).toBeNull();
+      expect(bare.container).toHaveTextContent(dict.empty.architecture);
+      bare.unmount();
     }
   });
 
@@ -33,7 +51,7 @@ describe('buildHexPlane', () => {
     const texts: string[] = [];
     for (const page of ['profile', 'services'] as const) {
       const { container, unmount } = render(
-        <HomeView resume={resumeEs} architecture={architectureEs} route={{ lang: 'es', page }} siteUrl={SITE} apiUrl="http://api.example.test" />,
+        <HomeView resume={resumeEs} architecture={architectureEs} route={{ lang: 'es', page }} siteUrl={SITE} />,
       );
       expect(columns(container), page).toBe('2');
       texts.push(container.querySelector('[data-probe="plane"]')?.textContent ?? '');

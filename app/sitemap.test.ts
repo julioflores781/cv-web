@@ -4,6 +4,19 @@ import { getConfig } from '@/lib/api';
 import sitemap from './sitemap';
 
 describe('sitemap', () => {
+  it('T87: with the default siteUrl, every url and alternate starts with https://floreslab.dev', () => {
+    const saved = process.env.SITE_URL;
+    delete process.env.SITE_URL;
+    try {
+      const entries = sitemap();
+      expect(entries).toHaveLength(4);
+      const urls = entries.flatMap((entry) => [entry.url, ...Object.values(entry.alternates?.languages ?? {})]);
+      for (const url of urls) expect(String(url).startsWith('https://floreslab.dev/')).toBe(true);
+    } finally {
+      if (saved !== undefined) process.env.SITE_URL = saved;
+    }
+  });
+
   it('BA-T6: lists the 4 pages and each one alternates to its counterpart in the other language', () => {
     const base = getConfig().siteUrl;
     const entries = sitemap();

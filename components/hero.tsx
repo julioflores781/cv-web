@@ -13,15 +13,13 @@ interface HeroProps {
   dict: Dictionary;
   /** Profile page only: «Ver trayectoria» needs the experience section to exist. */
   hasExperience: boolean;
-  /** Services page only: «Ver proyectos» needs the projects section to exist. */
-  hasProjects?: boolean;
-  /** The hexagonal plane (right column). Without it the hero has a single column (design deviation D4). */
+  /** The hexagonal plane (right column). Without it the hero has a single column (HomeView always passes one: the plane or its empty state). */
   plane?: ReactNode;
   /** The cajetin, drawn as the bottom strip of the hero. */
   children?: ReactNode;
 }
 
-export function Hero({ profile, route, dict, hasExperience, hasProjects = false, plane = null, children }: HeroProps) {
+export function Hero({ profile, route, dict, hasExperience, plane = null, children }: HeroProps) {
   const isProfile = route.page === 'profile';
   const country = formatCountry(profile.countryCode, route.lang);
   const eyebrow = isProfile ? [profile.label, country].filter(Boolean).join(' · ') : dict.hero.services.eyebrow;
@@ -48,7 +46,7 @@ export function Hero({ profile, route, dict, hasExperience, hasProjects = false,
                 {dict.hero.profile.trajectoryCta}
               </Cta>
             ) : null}
-            {!isProfile && hasProjects ? (
+            {!isProfile ? (
               <Cta href="#projects" variant="outline" probe="cta-secondary">
                 {dict.hero.services.projectsCta}
               </Cta>

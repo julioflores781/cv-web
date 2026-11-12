@@ -1,0 +1,6 @@
+# web-runtime-pdf
+
+Slug hijo 4 de `web-runtime` (depende de `web-runtime-datos`; slugs 0–3 APPROVED y sin cerrar: el humano pidió implementar todos seguidos y cerrar al final).
+Plan validado por el humano: `progress/web-runtime/analysis.md` (v2): **§2.3** (PDF con caché en memoria por contenido), **§4** A6, **§5 «Slug 4»** (tests T57–T69).
+Decisión del humano: sin caché con TTL ni datos viejos. Cada petición del PDF consulta la API (`getResume`); si falla → 5xx aunque haya PDF en memoria. Clave de caché = idioma + sha256 del resume (claves ordenadas); mapa en memoria por proceso acotado (LRU, máx. 4) con `Promise<Buffer>` (dedupe de renders concurrentes); un render fallido no se guarda y da `null` con `console.warn` (la ruta responde 404 y el botón se omite). `ETag` con el hash, `Cache-Control: no-cache`, `If-None-Match` → 304, `Content-Disposition: inline`. `outputFileTracingIncludes` para los `.woff` de `@fontsource` en ambas rutas (ya existe desde `web-runtime-datos`: reutilizar, no duplicar). Sin `unstable_cache` ni `next/cache`. Privacidad intacta (mismo `CvDocument`, solo email/LinkedIn/GitHub, sin teléfono/documento/nacimiento).
+Reglas: sin duplicar código, sin git de escritura, Node 22, tests exactamente los del plan (extras anotados), repo PÚBLICO.

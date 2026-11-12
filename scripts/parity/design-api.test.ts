@@ -35,6 +35,12 @@ describe('design-api', () => {
   });
   afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
 
+  it('serves the Quarkus readiness endpoint with 200 {"status":"UP"} (the web health check and the Docker smoke need it)', async () => {
+    const response = await fetch(`${new URL(base).origin}/q/health/ready?lang=es`);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ status: 'UP' });
+  });
+
   const get = async (resource: string, lang = 'es') => (await fetch(`${base}/${resource}?lang=${lang}`)).json();
 
   // RF-T6 (RF-A4)

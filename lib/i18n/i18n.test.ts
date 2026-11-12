@@ -26,6 +26,21 @@ describe('dictionaries', () => {
     }
   });
 
+  it('T42: empty.services, empty.projects and empty.architecture exist in ES and EN, non-empty, at most 160 characters and distinct per language', () => {
+    for (const lang of LANGS) {
+      for (const key of ['services', 'projects', 'architecture'] as const) {
+        const text = dictionaries[lang].empty[key];
+        expect(text.trim(), `${lang} ${key}`).not.toBe('');
+        expect(text.length, `${lang} ${key}`).toBeLessThanOrEqual(160);
+        expect(text, `${lang} ${key}`).not.toMatch(FORBIDDEN);
+        expect(text, `${lang} ${key}`).not.toMatch(/\d/);
+      }
+    }
+    for (const key of ['services', 'projects', 'architecture'] as const) expect(dictionaries.en.empty[key]).not.toBe(dictionaries.es.empty[key]);
+    const keys = (lang: 'es' | 'en') => flatten(dictionaries[lang]).map(([key]) => key).sort();
+    expect(keys('es')).toEqual(keys('en'));
+  });
+
   it('extra: the two dictionaries do not share the same copy (EN is translated, not copied from ES)', () => {
     expect(dictionaries.en.hero.profile.h1).not.toBe(dictionaries.es.hero.profile.h1);
     expect(dictionaries.en.hero.services.h1).not.toBe(dictionaries.es.hero.services.h1);

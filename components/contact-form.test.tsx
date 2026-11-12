@@ -4,12 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { ContactForm } from './contact-form';
 import { ContactSection } from './contact-section';
+import { HomeView } from './home-view';
 import { EngagementProvider } from './engagement-provider';
 import { ServiceCards } from './service-cards';
 import { servicesEs } from '@/tests/fixtures/content';
 import { resumeEs } from '@/tests/fixtures/resume';
 
-const API = 'http://api.example.test';
 const EMAIL = 'ada@example.test';
 const es = getDictionary('es');
 const en = getDictionary('en');
@@ -44,7 +44,7 @@ const submit = () => fireEvent.click(send());
 
 function form(props: { dict?: typeof es; lang?: 'es' | 'en'; page?: 'profile' | 'services' } = {}) {
   const { dict = es, lang = 'es', page = 'profile' } = props;
-  return <ContactForm apiUrl={API} lang={lang} email={EMAIL} labels={labelsOf(dict, page)} />;
+  return <ContactForm lang={lang} email={EMAIL} labels={labelsOf(dict, page)} />;
 }
 
 describe('ContactForm structure', () => {
@@ -260,7 +260,7 @@ describe('ContactForm validation and submit', () => {
     fireEvent.change(screen.getByLabelText(/^Message/), { target: { value: 'A message long enough' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(mock).toHaveBeenCalledTimes(1));
-    expect((mock.mock.calls[0] as unknown as [string])[0]).toBe(`${API}/api/v1/contact/messages?lang=en`);
+    expect((mock.mock.calls[0] as unknown as [string])[0]).toBe("/api/contact/?lang=en");
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Message sent'));
   });
 });
@@ -272,7 +272,7 @@ function withServices(lang: 'es' | 'en' = 'es') {
   return (
     <EngagementProvider titles={titles}>
       <ServiceCards services={services} lang={lang} labels={{ ...dict.services, from: dict.services.priceFrom }} />
-      <ContactSection contact={resumeEs.contact} route={{ lang, page: 'services' }} dict={dict} index={4} apiUrl={API} />
+      <ContactSection contact={resumeEs.contact} route={{ lang, page: 'services' }} dict={dict} index={4} />
     </EngagementProvider>
   );
 }
@@ -286,7 +286,7 @@ describe('selection to form', () => {
     pick('^S-01');
     pick('^S-02');
     expect(screen.getByText('sin bloques marcados')).toBeInTheDocument();
-    const profile = render(<ContactSection contact={resumeEs.contact} route={{ lang: 'es', page: 'profile' }} dict={es} index={4} apiUrl={API} />);
+    const profile = render(<ContactSection contact={resumeEs.contact} route={{ lang: 'es', page: 'profile' }} dict={es} index={4} />);
     expect(profile.container.querySelector('[data-probe="selection-line"]')).toBeNull();
   });
 
@@ -320,6 +320,18 @@ describe('selection to form', () => {
     expect(bodyOf(mock).message).toBe('Solo el texto de ejemplo');
   });
 
+  it('T49: on the services page with services=[] the message goes without a prefix and without error', async () => {
+    const mock = stubFetch(created);
+    render(<HomeView resume={resumeEs} services={[]} projects={[]} route={{ lang: 'es', page: 'services' }} siteUrl="https://cv.example.test" />);
+    expect(screen.queryByText(/sin bloques marcados|selección →/)).toBeNull();
+    fill('Solo el texto de ejemplo');
+    submit();
+    await waitFor(() => expect(mock).toHaveBeenCalledTimes(1));
+    expect(bodyOf(mock).message).toBe('Solo el texto de ejemplo');
+    expect(screen.queryByRole('alert')?.textContent ?? '').toBe('');
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Mensaje enviado'));
+  });
+
   it('CO-T38: a user text of 9 characters with a selection is too-short (the prefix does not count)', () => {
     const mock = stubFetch(created);
     render(withServices());
@@ -335,7 +347,7 @@ describe('selection to form', () => {
     const title = 'T'.repeat(76);
     render(
       <EngagementProvider titles={[title]}>
-        <ContactSection contact={resumeEs.contact} route={{ lang: 'es', page: 'services' }} dict={es} index={4} apiUrl={API} />
+        <ContactSection contact={resumeEs.contact} route={{ lang: 'es', page: 'services' }} dict={es} index={4} />
       </EngagementProvider>,
     );
     expect(screen.getByText('0/1900')).toBeInTheDocument();
@@ -352,5 +364,21 @@ describe('selection to form', () => {
     pick('^S-03');
     pick('^S-01');
     expect(message().value).toBe('Texto a medias');
+  });
+});
+
+describe('no apiUrl prop', () => {
+  it('T84: ContactForm, ContactSection and HomeView take no apiUrl and the page carries no API origin', () => {
+    const labels = labelsOf(es);
+    // The ts-expect-error lines fail the typecheck if any component accepted `apiUrl` again.
+    // @ts-expect-error apiUrl was removed
+    render(<ContactForm apiUrl="http://api.example.test" lang="es" email={EMAIL} labels={labels} />);
+    // @ts-expect-error apiUrl was removed
+    const section = <ContactSection apiUrl="http://api.example.test" contact={resumeEs.contact} route={{ lang: 'es', page: 'profile' }} dict={es} index={4} />;
+    // @ts-expect-error apiUrl was removed
+    const view = <HomeView apiUrl="http://api.example.test" resume={resumeEs} route={{ lang: 'es', page: 'profile' }} siteUrl="https://cv.example.test" />;
+    for (const element of [section, view]) expect(renderToString(element)).not.toContain('api.example.test');
+    const html = renderToString(<HomeView resume={resumeEs} route={{ lang: 'es', page: 'profile' }} siteUrl="https://cv.example.test" />);
+    expect(html).not.toMatch(/api\/v1|data-api/);
   });
 });

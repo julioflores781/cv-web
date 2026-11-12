@@ -1,5 +1,5 @@
 import { cvPdfResponse } from '@/lib/pdf/response';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-export const GET = () => cvPdfResponse('en');
+export const GET = (request: Request) => cvPdfResponse('en', request);

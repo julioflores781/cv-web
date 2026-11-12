@@ -56,11 +56,3 @@ export interface Project {
   highlights: string[];
   links: ProjectLink[];
 }
-
-export type ContentSource = 'api' | 'cache';
-export type ResumeSource = ContentSource;
-
-export interface ResumeResult {
-  resume: Resume;
-  source: ResumeSource;
-}
