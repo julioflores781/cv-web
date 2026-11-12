@@ -1,6 +1,7 @@
 # Web + API + PostgreSQL del CV para el NAS. Está pensado para pegarse tal cual en el editor de "Compose config" del NAS:
 # sin archivo .env ni variables externas. Cambia los valores marcados con CAMBIA.
-# Túnel de Cloudflare (manual): floreslab.dev -> http://cv-web:3000. La API no se publica: solo cv-web la llama por la red interna.
+# Túnel de Cloudflare (manual): floreslab.dev -> http://cv-web:3000. Este compose no publica puertos de la API: cv-web la llama por la red interna.
+# Si además la expones por el túnel (cv-api.floreslab.dev), bloquea /api/v1/admin/* en Cloudflare ANTES de desplegar el admin (docs/admin-runbook.md en el repo `cv`).
 services:
   cv-db:
     image: postgres:16-alpine
@@ -40,6 +41,34 @@ services:
       # Aviso por Telegram de cada mensaje nuevo (bot de @BotFather y el id de tu chat). Vacío = sin aviso, los mensajes se guardan igual.
       CV_CONTACT_TELEGRAM_BOT_TOKEN: ""
       CV_CONTACT_TELEGRAM_CHAT_ID: ""
+      # ── Administración del contenido (el panel de la fase 3 y /api/v1/admin) ──
+      # Secreto con el que se firman las sesiones (JWT HS256): genéralo con `openssl rand -base64 48`. Mínimo 32 caracteres.
+      # Si falta o es corto (el marcador de abajo lo es), la API arranca igual, la parte pública funciona y /api/v1/admin responde 404 (admin deshabilitado).
+      # Cambiarlo cierra todas las sesiones abiertas. La contraseña NO va aquí: se crea en el NAS con scripts/admin-password.sh del repo `cv`.
+      CV_ADMIN_JWT_SECRET: CAMBIA-por-32-bytes-aleatorios # a propósito de menos de 32 caracteres: sin cambiarlo, el admin queda deshabilitado
+      CV_ADMIN_SESSION_LIFESPAN: PT8H # duración de la sesión (ISO-8601)
+      CV_ADMIN_LOGIN_MAX_FAILURES: "5" # fallos seguidos que bloquean la cuenta
+      CV_ADMIN_LOGIN_LOCK: PT15M # cuánto dura el bloqueo
+      # OBLIGATORIO en "true": responde 404 a toda petición de /api/v1/admin que traiga cabeceras de Cloudflare (CF-Ray, CF-Connecting-IP),
+      # es decir, a todo lo que llegue por el túnel. cv-web llama por la red interna y no las lleva. Es defensa en profundidad: la regla
+      # de Cloudflare que bloquea /api/v1/admin/* sigue siendo necesaria (ver docs/admin-runbook.md del repo `cv`).
+      CV_ADMIN_EDGE_BLOCK: "true"
+      # Argon2id de la contraseña (por defecto 64 MiB, 3 iteraciones, 1 hilo). No hace falta tocarlo; si el login va lento en el NAS,
+      # mide y ajusta con estas variables (descomenta): se aplican a los hashes nuevos, los antiguos siguen valiendo.
+      # CV_ADMIN_ARGON2_MEMORY_KIB: "65536"
+      # CV_ADMIN_ARGON2_ITERATIONS: "3"
+      # CV_ADMIN_ARGON2_PARALLELISM: "1"
+      # Imágenes de proyectos en Cloudflare R2 (claves site/projects/<uuid>.<ext>). Las cuatro primeras vacías = subida deshabilitada
+      # (503 IMAGE_STORAGE_UNAVAILABLE); el resto de la API no se entera. Usa un token de R2 PROPIO de esta web (lectura y escritura
+      # solo sobre este bucket), distinto del de padelhub, para poder rotarlo sin afectarle.
+      R2_ENDPOINT: https://CAMBIA-account-id.r2.cloudflarestorage.com
+      R2_BUCKET_NAME: CAMBIA-bucket
+      R2_ACCESS_KEY_ID: ""
+      R2_SECRET_ACCESS_KEY: ""
+      # Dominio público del bucket, sin barra final (de aquí salen las images[].url de /api/v1/projects). Vacío = el GET público no devuelve imágenes.
+      R2_PUBLIC_URL: ""
+    # Sin límite de memoria a propósito (la JVM usa hasta el 75 % de la que haya). Argon2 necesita 64 MiB por hash (hasta 2 a la vez) más la subida
+    # de imágenes y, al ejecutar admin-password.sh, una segunda JVM dentro del mismo contenedor. Si le pones "mem_limit", que sea de 512m o más.
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/q/health/ready || exit 1"]
       interval: 30s
