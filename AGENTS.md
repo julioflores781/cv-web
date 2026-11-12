@@ -11,18 +11,19 @@
 ## 2. Mapa (`app/`, `components/`, `lib/`)
 | Área | Rol |
 |------|-----|
-| `app/` | Rutas App Router. `/` es español, `/en` inglés; ambas generadas estáticamente. |
+| `app/` | Rutas App Router (dinámicas, renderizadas por petición). `/` y `/servicios/` en español, `/en/` y `/en/services/` en inglés; `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
 | `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. |
-| `lib/api` | Cliente de la API del CV + tipos (generados desde su OpenAPI) + respaldo de build. |
+| `lib/api` | Cliente de la API del CV (lectura en runtime, memo solo por petición) + tipos (generados desde su OpenAPI) + `config.ts` (`CV_API_URL`, `SITE_URL`). |
 | `lib/i18n` | Diccionarios ES/EN y helpers de idioma. |
-| `design/` | `preview.html`: referencia visual aprobada (propuesta B). Fuente de los tokens de diseño. |
+| `Dockerfile`, `deploy/` | Imagen standalone y compose único del NAS (`cv-db`, `cv-api`, `cv-web`). El CI publica la imagen (job `docker`). |
+| `design/` | `artifact-v2/project/Main.dc.html`: referencia visual vigente. Fuente de los tokens de diseño. |
 | `progress/` | Estado del arnés: `current.md`, `history.md`, y una carpeta por tarea. |
 
 ## 3. Reglas duras
 - **Una tarea (slug) a la vez.**
 - **Los datos solo entran por `lib/api`**; los componentes reciben props tipadas, no hacen `fetch`.
-- **Si la API no responde en el build** se usa el último CV bueno guardado; si no hay ninguno, el build **falla** (jamás se publica una web vacía).
-- **Tokens de diseño** de `design/preview.html` (variables CSS); no inventar colores ni tipografías.
+- **Sin caché ni respaldo:** cada render lee la API; si no responde o devuelve algo inválido, la página da **500** (jamás datos viejos). Servicios, proyectos y arquitectura vacíos muestran un estado vacío.
+- **Tokens de diseño** de `design/artifact-v2/project/Main.dc.html` (variables CSS en `app/globals.css`); no inventar colores ni tipografías.
 - **Accesibilidad:** contraste AA, foco visible, `prefers-reduced-motion` respetado, HTML semántico.
 - **No commitear ni mergear automáticamente.** Solo el `closer` y solo tras "cerrá <slug>".
 - **Escribí en `progress/current.md` mientras trabajás.**

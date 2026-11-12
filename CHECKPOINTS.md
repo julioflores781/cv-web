@@ -4,7 +4,7 @@
 
 ## C1 — Calidad ejecutable
 - [ ] `npm run lint`, `npm run typecheck` y `npm test` en verde.
-- [ ] `npm run build` en verde (con la API real **y** simulando la API caída con respaldo disponible).
+- [ ] `npm run build` en verde sin API (el build no la consulta) y las páginas, `sitemap.xml` y `robots.txt` salen dinámicas (`ƒ`).
 - [ ] Sin `console.log` de debug, código muerto ni TODOs sin contexto.
 
 ## C2 — Cobertura y trazabilidad
@@ -17,10 +17,10 @@
 
 ## C4 — Datos y resiliencia
 - [ ] Los datos entran solo por `lib/api`; los componentes no hacen `fetch`.
-- [ ] API caída + respaldo → el build pasa y avisa; API caída sin respaldo → el build falla con mensaje claro.
+- [ ] API caída o respuesta inválida → la página da 500 (sin caché ni respaldo); listas vacías → estado vacío; `/api/health` da 503 si la API no contesta.
 
 ## C5 — Diseño, accesibilidad y SEO
-- [ ] Usa los tokens de `design/preview.html`; se ve como la propuesta B en escritorio y móvil.
+- [ ] Usa los tokens de `design/artifact-v2/project/Main.dc.html`; se ve como la referencia en escritorio y móvil.
 - [ ] Contraste AA, foco visible, `prefers-reduced-motion`, un solo `h1`, landmarks.
 - [ ] `title`, `description`, Open Graph, `hreflang` ES/EN y JSON-LD `Person` en cada idioma.
 
