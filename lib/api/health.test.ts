@@ -37,4 +37,17 @@ describe('checkApi', () => {
     expect(elapsed).toBeLessThan(3_500);
     expect(server.requests).toHaveLength(1);
   });
+
+  it('W12: sends X-Request-Id (the one given, or a generated 32 hex)', async () => {
+    const ids: Array<string | string[] | undefined> = [];
+    server = await startServer((req, res) => {
+      ids.push(req.headers['x-request-id']);
+      json(res, 200, { status: 'UP' });
+    });
+    vi.stubEnv('CV_API_URL', server.url);
+    await checkApi('given-request-id');
+    await checkApi();
+    expect(ids[0]).toBe('given-request-id');
+    expect(ids[1]).toMatch(/^[0-9a-f]{32}$/);
+  });
 });

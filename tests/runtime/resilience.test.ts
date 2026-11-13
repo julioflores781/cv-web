@@ -51,13 +51,14 @@ describe('runtime resilience (no cache between requests)', () => {
     for (const resource of ['resume', 'architecture', 'services', 'projects']) expect(requestsFor(api, resource), resource).toHaveLength(2);
   }, 60_000);
 
-  it('T37: with the API down from the start the page is a 500 that leaks no internals, and the log carries a [cv-web] error', async () => {
+  it('T37: with the API down from the start the page is a 500 that leaks no internals, and the log carries the api_call and render_error lines', async () => {
     const down = await closedPortUrl();
     const { server } = await scenario(down);
     const result = await get(server, '/');
     expect(result.status).toBe(500);
     expectNoInternals(result.text, down, new URL(down).host);
-    expect(server.log()).toMatch(/\[cv-web\] .*unavailable/);
+    expect(server.log()).toMatch(/"event":"api_call".*"outcome":"unreachable"/);
+    expect(server.log()).toMatch(/"event":"render_error"/);
   }, 60_000);
 
   it('T38: a 404 for the CV is a controlled 500, not a 200 with an empty h1', async () => {

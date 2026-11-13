@@ -20,6 +20,8 @@ export interface ForwardOptions {
   payload: ContactPayload;
   /** Raw `CF-Connecting-IP` of the visitor; forwarded only when it is a valid IP address. */
   clientIp?: string | null | undefined;
+  /** Sent as `X-Request-Id` so the API log of this message carries the id of the web log line. */
+  requestId?: string | undefined;
   baseUrl?: string;
   timeoutMs?: number;
 }
@@ -47,14 +49,18 @@ function readProblem(body: string): ProblemInfo | null {
 }
 
 /**
- * Forwards a validated contact message to `POST /api/v1/contact/messages?lang=`. The only headers are `Content-Type` and, when valid,
+ * Forwards a validated contact message to `POST /api/v1/contact/messages?lang=`. The only headers are `Content-Type`, `X-Request-Id` and, when valid,
  * `CF-Connecting-IP` (the API rate-limits per sender); cookies, User-Agent, Referer, X-Forwarded-For and Authorization are never passed on.
  * One attempt, no retry: a retry could deliver the same message twice.
  */
-export async function forwardContact({ lang, payload, clientIp, baseUrl, timeoutMs = CONTACT_TIMEOUT_MS }: ForwardOptions): Promise<ForwardResult> {
+export async function forwardContact({ lang, payload, clientIp, requestId, baseUrl, timeoutMs = CONTACT_TIMEOUT_MS }: ForwardOptions): Promise<ForwardResult> {
   const url = `${(baseUrl ?? getConfig().apiUrl).replace(/\/+$/, '')}/api/v1/contact/messages?lang=${lang}`;
   const ip = validIp(clientIp);
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(ip ? { 'CF-Connecting-IP': ip } : {}) };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(requestId ? { 'X-Request-Id': requestId } : {}),
+    ...(ip ? { 'CF-Connecting-IP': ip } : {}),
+  };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

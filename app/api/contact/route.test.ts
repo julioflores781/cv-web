@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { captureLogs } from '@/tests/helpers/capture-log';
 import { closedPortUrl, json, startServer, type Handler, type TestServer } from '@/tests/helpers/http-server';
 import { DELETE, GET, PATCH, POST, PUT } from './route';
 
@@ -36,6 +37,15 @@ const post = (body: unknown, init: { query?: string; headers?: Record<string, st
       body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
   );
+
+const CANARIES = {
+  name: 'CANARY-NAME-Zed',
+  email: 'canary-email@example.test',
+  message: 'CANARY-MESSAGE contenido privado de ejemplo',
+  website: 'CANARY-WEBSITE',
+};
+const IP = '203.0.113.77';
+const LEAKY = { 'CF-Connecting-IP': IP, Cookie: 'sid=CANARY-COOKIE', Authorization: 'Bearer CANARY-AUTH' };
 
 describe('POST /api/contact', () => {
   it('T74: a valid message with the API at 201 answers 201 without body, no-store and no cookie', async () => {
@@ -76,9 +86,9 @@ describe('POST /api/contact', () => {
   it('T77: oversized bodies (413), a wrong Content-Type (415) and invalid JSON or fields (400) never reach the API', async () => {
     const { bodies } = await api();
     const status = async (response: Promise<Response>) => (await response).status;
-    expect(await status(post({ ...VALID, message: 'x'.repeat(9000) }))).toBe(413);
-    expect(await status(post(JSON.stringify(VALID), { headers: { 'Content-Type': 'text/plain' } }))).toBe(415);
-    expect(await status(post('{not json'))).toBe(400);
+    expect(await status(post({ ...CANARIES, message: `CANARY-MESSAGE${'x'.repeat(9000)}` }, { headers: LEAKY }))).toBe(413);
+    expect(await status(post(JSON.stringify(CANARIES), { headers: { ...LEAKY, 'Content-Type': 'text/plain' } }))).toBe(415);
+    expect(await status(post('{not json CANARY-RAW', { headers: LEAKY }))).toBe(400);
     expect(await status(post('[1,2]'))).toBe(400);
     expect(await status(post({ ...VALID, name: 5 }))).toBe(400);
     expect(await status(post({ ...VALID, website: 5 }))).toBe(400);
@@ -132,5 +142,82 @@ describe('POST /api/contact', () => {
     });
     await post(VALID, { headers: { 'CF-Connecting-IP': '203.0.113.9', 'X-Forwarded-For': '9.9.9.9' } });
     expect(ip).toBe('203.0.113.9');
+  });
+
+  describe('logs and request id', () => {
+
+    it('W13: every outcome leaves one contact line with outcome, status, code or reason (a field name), the level and the X-Request-Id of the response', async () => {
+      const logs = captureLogs();
+      const cases: Array<{ run: () => Promise<Response>; outcome: string; status: number; level: string; extra: Record<string, unknown> }> = [
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'sent', status: 201, level: 'info', extra: {} },
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'rejected', status: 400, level: 'info', extra: { code: 'CONTACT_INVALID' } },
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'rejected', status: 429, level: 'info', extra: { code: 'CONTACT_RATE_LIMITED' } },
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'upstream_error', status: 502, level: 'warn', extra: {} },
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'timeout', status: 504, level: 'warn', extra: {} },
+        { run: () => post(CANARIES, { headers: LEAKY }), outcome: 'unreachable', status: 502, level: 'warn', extra: {} },
+        { run: () => post(JSON.stringify(CANARIES), { headers: { ...LEAKY, 'Content-Type': 'text/plain' } }), outcome: 'invalid', status: 415, level: 'info', extra: { reason: 'content_type' } },
+        { run: () => post({ ...CANARIES, message: `CANARY-MESSAGE${'x'.repeat(9000)}` }, { headers: LEAKY }), outcome: 'invalid', status: 413, level: 'info', extra: { reason: 'too_large' } },
+        { run: () => post('{not json CANARY-RAW', { headers: LEAKY }), outcome: 'invalid', status: 400, level: 'info', extra: { code: 'BAD_REQUEST', reason: 'malformed_body' } },
+        { run: () => post({ ...CANARIES, email: 'CANARY-email-invalid' }, { headers: LEAKY }), outcome: 'invalid', status: 400, level: 'info', extra: { code: 'CONTACT_INVALID', reason: 'email' } },
+      ];
+      const replies: Handler[] = [
+        (_req, res) => res.writeHead(201).end(),
+        (_req, res) => json(res, 400, problem(400, 'CONTACT_INVALID'), 'application/problem+json'),
+        (_req, res) => json(res, 429, problem(429, 'CONTACT_RATE_LIMITED'), 'application/problem+json'),
+        (_req, res) => json(res, 500, problem(500, 'UNEXPECTED')),
+        () => undefined,
+        (_req, res) => res.destroy(),
+      ];
+      for (const [i, { run, outcome, status, level, extra }] of cases.entries()) {
+        await server?.close();
+        if (i < replies.length) await api(replies[i]);
+        else await api();
+        if (outcome === 'timeout') {
+          vi.useFakeTimers({ toFake: ['setTimeout'] });
+        }
+        const pending = run();
+        if (outcome === 'timeout') await vi.advanceTimersByTimeAsync(10_000);
+        const response = await pending;
+        vi.useRealTimers();
+        const lines = logs.events('contact');
+        const entry = lines.at(-1);
+        expect(lines, outcome).toHaveLength(i + 1);
+        expect(entry, outcome).toMatchObject({ event: 'contact', outcome, status, level, ...extra });
+        expect(entry?.duration_ms).toEqual(expect.any(Number));
+        expect(response.status).toBe(status);
+        expect(response.headers.get('X-Request-Id')).toBe(entry?.request_id);
+        expect(entry?.request_id).toMatch(/^[0-9a-f]{32}$/);
+      }
+      expect(logs.lines().filter((line) => line.entry.event !== 'contact')).toEqual([]);
+      // Whatever the outcome, no line holds a form value, the visitor IP, a header value nor the API address.
+      for (const line of logs.lines()) expect(line.raw).not.toMatch(/CANARY|203\.0\.113|127\.0\.0\.1|sid=/);
+      for (const line of logs.lines()) expect(Object.keys(line.entry).sort()).toEqual(
+        ['code', 'duration_ms', 'event', 'level', 'outcome', 'reason', 'request_id', 'service', 'status', 'timestamp'].filter((key) => key in line.entry),
+      );
+      const streams = logs.lines().map((line) => [line.entry.level, line.stream]);
+      for (const [level, stream] of streams) expect(stream).toBe(level === 'info' ? 'stdout' : 'stderr');
+    });
+
+    it('W14: a message with canaries in every field and CF-Connecting-IP leaves no canary nor IP in any line, sent or with the API down', async () => {
+      const logs = captureLogs();
+      const headers = { 'CF-Connecting-IP': IP, Cookie: 'sid=CANARY-COOKIE', Authorization: 'Bearer CANARY-AUTH' };
+      const seen: Array<string | string[] | undefined> = [];
+      await api((req, res) => {
+        seen.push(req.headers['x-request-id']);
+        res.writeHead(201).end();
+      });
+      const ok = await post(CANARIES, { headers });
+      expect(ok.status).toBe(201);
+      await server?.close();
+      vi.stubEnv('CV_API_URL', await closedPortUrl());
+      const down = await post(CANARIES, { headers });
+      expect(down.status).toBe(502);
+
+      expect(logs.events('contact')).toHaveLength(2);
+      expect(logs.events('contact')[0]?.request_id).toBe(seen[0]);
+      const everything = logs.text();
+      for (const canary of [...Object.values(CANARIES), IP, 'CANARY-COOKIE', 'CANARY-AUTH', '127.0.0.1']) expect(everything, canary).not.toContain(canary);
+      expect(everything).not.toMatch(/CANARY|203\.0\.113/);
+    });
   });
 });

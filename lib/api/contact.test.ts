@@ -89,4 +89,16 @@ describe('forwardContact', () => {
     expect(await forwardContact({ lang: 'es', payload, baseUrl: url })).toEqual({ kind: 'upstream-error' });
     expect(server?.requests).toHaveLength(1);
   });
+
+  it('W14: with a request id it sends only Content-Type, X-Request-Id and the valid IP (plus Host, Connection and Content-Length)', async () => {
+    const { seen, url } = await api();
+    await forwardContact({ lang: 'es', payload, clientIp: '203.0.113.9', requestId: 'abc123def456', baseUrl: url });
+    expect(seen.value?.names.sort()).toEqual(['cf-connecting-ip', 'connection', 'content-length', 'content-type', 'host', 'x-request-id']);
+    expect(seen.value?.headers['x-request-id']).toBe('abc123def456');
+
+    await server?.close();
+    const without = await api();
+    await forwardContact({ lang: 'es', payload, clientIp: '<script>', requestId: 'abc123def456', baseUrl: without.url });
+    expect(without.seen.value?.names.sort()).toEqual(['connection', 'content-length', 'content-type', 'host', 'x-request-id']);
+  });
 });
