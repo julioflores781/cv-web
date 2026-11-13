@@ -18,6 +18,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Rotación de los logs de Docker: 5 archivos de 10 MB como máximo por contenedor (50 MB). Sin esto json-file crece sin límite en el NAS.
+    # Postgres escribe poco al log; se limita igual para que ningún servicio quede fuera de la regla.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     # Sin "ports": solo la API (misma red del compose) llega a la base de datos.
 
   cv-api:
@@ -75,6 +82,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    # Rotación de los logs de Docker: 5 archivos de 10 MB como máximo por contenedor (50 MB). Sin esto json-file crece sin límite en el NAS.
+    # Aquí viven el access log y la auditoría de la API (docs/observability.md del repo `cv`): al rotar, los más antiguos se pierden (no hay tabla de auditoría).
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   cv-web:
     image: julioflores781/cv-web:latest
@@ -100,6 +114,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+    # Rotación de los logs de Docker: 5 archivos de 10 MB como máximo por contenedor (50 MB). Sin esto json-file crece sin límite en el NAS.
+    # Una línea JSON por evento (lib/log.ts); lee y cruza por request_id con cv-api.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
   cv-db:

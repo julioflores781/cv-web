@@ -37,7 +37,7 @@ Unitarios para `lib/`, de componente para UI (con fixtures ficticios «Ada Ejemp
 
 ## PDF del CV
 - `lib/pdf/` (`@react-pdf/renderer@4.9.0`, JS puro): `files.ts` (nombres/ruta, única fuente), `fonts.ts` (`.woff` de `@fontsource/*@5.3.0`, sin copias), `theme.ts` (= tokens «obra» de `globals.css`, con test), `cv-document.tsx` (A4, una columna, ATS), `build-cv-pdf.ts` (`getCvPdf`, memo en memoria por contenido), `response.ts`.
-- Rutas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Rutas dinámicas: cada petición consulta la API (`getResume`; si falla, 5xx aunque haya PDF en memoria). Caché en memoria acotada con clave por contenido (`lang + hash del CV`), `ETag` y `Cache-Control: no-cache`. Si el render falla: `null` + `console.warn`, la ruta responde 404 y el botón se omite.
+- Rutas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Rutas dinámicas: cada petición consulta la API (`getResume`; si falla, 5xx aunque haya PDF en memoria). Caché en memoria acotada con clave por contenido (`lang + hash del CV`), `ETag` y `Cache-Control: no-cache`. Si el render falla: `null` + un WARN `pdf_render_failed` (`lib/log.ts`), la ruta responde 404 y el botón se omite.
 - Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en «02 / arquitectura» del Perfil y solo si hay PDF. Los PDF no van en el sitemap.
 - Gotcha: el PDF no usa IBM Plex Mono: el `.woff` de fontsource tiene el glifo de espacio roto para fontkit (falla al medir). Solo Barlow Condensed 700 e IBM Plex Sans 400/600.
 
@@ -50,6 +50,13 @@ Herramientas en `scripts/parity/` (solo desarrollo; no se publican). Referencia:
 - `node scripts/parity/probe.mjs <ref|web> <perfil|servicios>` imprime la función para `evaluate_script` de Chrome DevTools; devuelve `getComputedStyle` + `getBoundingClientRect` por clave.
 - `npm run parity:diff -- a.png b.png` compara dos capturas por bandas de 400 px (umbral 3 %; código de salida 1 si alguna lo supera).
 - Los datos de `design-data.json` son el copy del diseño: nunca se mezclan con los fixtures «Ada Ejemplo» de los tests ni se publican.
+
+## Logs
+- **Única salida:** `lib/log.ts` (`logEvent(level, event, fields)`); `console.*` está prohibido en el resto (lo vigila `tests/log-gate.test.ts` y `no-console`). Una línea JSON por evento: `timestamp`, `level`, `service:"cv-web"`, `event` y campos primitivos; INFO por stdout, WARN/ERROR por stderr. Nunca lanza.
+- **Privacidad:** lista negra de claves (`password`, `token`, `authorization`, `cookie`, `email`, `message`, `name`, `ip`, `body`, `website`, comparadas normalizadas), un `Error` se registra solo como su clase, valores saneados (sin saltos de línea, máx. 200 caracteres). Nunca IP, cabeceras, query, cuerpos ni datos del formulario.
+- **`X-Request-Id`:** `lib/request-id.ts` (32 hex). `requestJson` genera un id por llamada a la API, lo envía en `X-Request-Id` y lo reutiliza en los reintentos; `POST /api/contact` devuelve el suyo en la respuesta.
+- **Eventos:** `api_call` (WARN por intento fallido; el éxito es silencio), `contact`, `health` (solo degradado), `render_error` (`instrumentation.ts`, `onRequestError`) y `pdf_render_failed`. No hay línea por visita (no se usa `proxy.ts`).
+- **Despliegue:** el compose rota los logs de Docker (`json-file`, `max-size: "10m"`, `max-file: "5"`; `tests/deploy/deploy-files.test.ts`). Guía de lectura y búsqueda: `docs/observability.md` del repo `cv`.
 
 ## Docker y despliegue
 - `Dockerfile` (Node 22 alpine, multi-stage): `deps` (`npm ci`) → `build` (`npm run build`, sin API) → `runtime` con `.next/standalone`, `.next/static` y `public`, usuario no root `app`,

@@ -45,6 +45,7 @@ docker build -t cv-web .   # imagen standalone (Node 22, usuario no root, health
   `deploy/docker-compose.yml` es el compose único del NAS (`cv-db`, `cv-api`, `cv-web`; se pega en el editor sin `.env`, secretos `CAMBIA-…`); el túnel apunta
   `floreslab.dev` → `http://cv-web:3000`. El job `docker` del CI (solo en push) construye amd64, hace un smoke con la API falsa de `scripts/parity/design-api.mjs`
   y publica `julioflores781/cv-web` (amd64+arm64) con los secretos `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`.
+- **Logs:** una línea JSON por evento, solo por `lib/log.ts` (`logEvent`; nada de `console.*` fuera de él). `X-Request-Id` (32 hex) viaja de la web a la API y vuelve en `POST /api/contact`; nunca se registran IP, cabeceras, query ni datos del formulario. Detalle en `docs/web-standards.md` («Logs») y `docs/observability.md` del repo `cv`.
 - **Endpoints propios:** `GET /api/health` (comprueba también la API; 200/503) y `POST /api/contact` (reenvía el formulario a la API; el navegador solo habla con su origen).
 - **Privacidad:** solo email, LinkedIn y GitHub. Nunca teléfono, documento ni fecha de nacimiento (la API ya no los expone).
 - El contenido **no se copia al repo**: viene de la API. Las pruebas usan fixtures ficticios («Ada Ejemplo»), nunca el CV real.
