@@ -14,6 +14,7 @@
 | `app/` | Rutas App Router (dinámicas, renderizadas por petición). `/` y `/servicios/` en español, `/en/` y `/en/services/` en inglés; `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
 | `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. |
 | `lib/api` | Cliente de la API del CV (lectura en runtime, memo solo por petición) + tipos (generados desde su OpenAPI) + `config.ts` (`CV_API_URL`, `SITE_URL`). |
+| `lib/log.ts`, `lib/request-id.ts`, `instrumentation.ts` | Logs JSON (única salida, `logEvent`) y `X-Request-Id`. Ver «Logs» en `docs/web-standards.md`. |
 | `lib/i18n` | Diccionarios ES/EN y helpers de idioma. |
 | `Dockerfile`, `deploy/` | Imagen standalone y compose único del NAS (`cv-db`, `cv-api`, `cv-web`). El CI publica la imagen (job `docker`). |
 | `design/` | `artifact-v2/project/Main.dc.html`: referencia visual vigente. Fuente de los tokens de diseño. |

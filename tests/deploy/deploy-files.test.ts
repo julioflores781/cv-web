@@ -168,6 +168,35 @@ describe('deploy/docker-compose.yml: admin and R2 variables of cv-api', () => {
   });
 });
 
+describe('deploy/docker-compose.yml: log rotation (D1)', () => {
+  const compose = read('deploy', 'docker-compose.yml');
+  const service = (name: string): string => active(block(compose, new RegExp(`^ {2}${name}:`)));
+
+  it('D1: every service rotates its Docker logs with json-file, max-size 10m and max-file 5', () => {
+    for (const name of ['cv-db', 'cv-api', 'cv-web']) {
+      expect(service(name), name).toMatch(
+        /^ {4}logging:\n {6}driver:\s*json-file\n {6}options:\n {8}max-size:\s*"10m"\n {8}max-file:\s*"5"\s*$/m,
+      );
+    }
+    expect(active(compose).match(/^\s+logging:/gm)).toHaveLength(3);
+  });
+
+  it('D1: the health checks are exactly the documented ones, with their timings', () => {
+    expect(service('cv-db')).toContain(
+      '    healthcheck:\n      test: ["CMD-SHELL", "pg_isready -U cv -d cv"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n',
+    );
+    expect(service('cv-api')).toContain(
+      '    healthcheck:\n      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/q/health/ready || exit 1"]\n' +
+        '      interval: 30s\n      timeout: 10s\n      retries: 3\n      start_period: 30s\n',
+    );
+    expect(service('cv-web')).toContain(
+      '    healthcheck:\n' +
+        `      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health/').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]\n` +
+        '      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 20s\n',
+    );
+  });
+});
+
 describe('ci workflow: docker job', () => {
   const job = block(workflow, /^ {2}docker:/);
 

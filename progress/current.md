@@ -1,6 +1,12 @@
 # Estado de la sesión
 
-Tarea en curso: ninguna. Siguiente: `api-observability`, con el plan en `progress/api-observability/analysis.md` (brief en `brief.md`).
+Tarea en curso: ninguna. Siguiente: web-admin (fase 3), con brief en `progress/web-admin/brief.md`.
+
+## api-observability (logs, auditoría y request id; repos `cv` y `cv-web`)
+CERRADO (5/5 slugs: api-logging-core, api-audit-log, api-business-events, web-logging, ops-log-docs). `cv`: merge `c7e59a5` en develop; `cv-web`: commits `bb336fd`, `779fbfa` + merge en develop. Detalle y pasos de PR en `progress/api-observability/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).
+- Diferido: `api-metrics` (Micrometer/Prometheus en gestión interna; no debe mover `/q/health/ready`).
+- Pendiente de la fase 3 (repo `cv-web`): panel `/admin` enviando `X-Client-IP` con la IP del navegador para que el audit la registre.
+- NO verificado: rotación de logs en el NAS, lectura en Portainer, el workflow de GitHub Actions de `cv`.
 
 ## api-admin
 CERRADO (7/7 slugs, `cv`: merge `40cf2a7` en develop; `cv-web`: commit `0fbba98` + merge en develop). Detalle y pasos de PR en `progress/api-admin/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).
