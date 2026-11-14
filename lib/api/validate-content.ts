@@ -1,4 +1,4 @@
-import type { Architecture, ArchitecturePort, PortAdapter, Project, ProjectLink, Service } from './types';
+import type { Architecture, ArchitecturePort, PortAdapter, Project, ProjectImage, ProjectLink, Service } from './types';
 import { parsePeriod } from './validate';
 
 type Obj = Record<string, unknown>;
@@ -96,6 +96,16 @@ function parseProjectLink(raw: unknown): ProjectLink | null {
   return label === null || url === null ? null : { label, url };
 }
 
+const positiveInt = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value > 0;
+
+/** Only `url, alt, width, height` survive: the storage key or any other field the API might add never reaches the page. */
+function parseProjectImage(raw: unknown): ProjectImage | null {
+  if (!isObj(raw)) return null;
+  const { url, alt, width, height } = raw;
+  if (typeof url !== 'string' || typeof alt !== 'string' || !positiveInt(width) || !positiveInt(height)) return null;
+  return { url, alt, width, height };
+}
+
 function parseProject(raw: unknown): Project | null {
   if (!isObj(raw)) return null;
   const { id, title, summary, relation, disclosure } = raw;
@@ -105,24 +115,28 @@ function parseProject(raw: unknown): Project | null {
   const stack = raw.stack === undefined ? [] : parseList(raw.stack, text);
   const highlights = raw.highlights === undefined ? [] : parseList(raw.highlights, text);
   const links = raw.links === undefined ? [] : parseList(raw.links, parseProjectLink);
+  // Absent or null: an API from before the admin, which had no images.
+  const images = raw.images === undefined || raw.images === null ? [] : parseList(raw.images, parseProjectImage);
   const period = raw.period === undefined || raw.period === null ? null : parsePeriod(raw.period);
   const periodInvalid = period === null && raw.period !== undefined && raw.period !== null;
   if (typeof id !== 'string' || typeof title !== 'string' || typeof summary !== 'string') return null;
-  if (role === false || client === false || clientLabel === false || stack === null || highlights === null || links === null || periodInvalid) {
+  if (role === false || client === false || clientLabel === false || stack === null || highlights === null || links === null || images === null || periodInvalid) {
     return null;
   }
   const knownRelation = relation === 'own' || relation === 'employer' ? relation : null;
   const knownDisclosure = disclosure === 'public' || disclosure === 'anonymous' ? disclosure : null;
   if (knownRelation === null || knownDisclosure === null) return null;
-  // Privacy: the real client of an anonymous project never leaves the parser, even if the API sends it.
+  // Privacy: the real client of an anonymous project never leaves the parser, even if the API sends it; neither do the images of a project
+  // that is not own + public (the API already drops them; this is the second barrier).
   return {
     id, title, summary, relation: knownRelation, disclosure: knownDisclosure, role,
     client: knownDisclosure === 'anonymous' ? null : client,
     clientLabel, period, stack, highlights, links,
+    images: knownRelation === 'own' && knownDisclosure === 'public' ? images : [],
   };
 }
 
-/** Validates an untrusted `/projects` payload, keeping the API order; `anonymous` projects lose their `client`. */
+/** Validates an untrusted `/projects` payload, keeping the API order; `anonymous` projects lose their `client`, and only `own` + `public` ones keep `images`. */
 export function parseProjects(raw: unknown): Project[] | null {
   return parseList(raw, parseProject);
 }

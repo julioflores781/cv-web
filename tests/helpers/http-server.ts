@@ -1,9 +1,11 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { createServer, type IncomingHttpHeaders, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 export interface TestServer {
   url: string;
   requests: string[];
+  /** Headers of each request, in the same order as `requests`. */
+  headers: IncomingHttpHeaders[];
   close: () => Promise<void>;
 }
 
@@ -11,8 +13,10 @@ export type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
 export async function startServer(handler: Handler): Promise<TestServer> {
   const requests: string[] = [];
+  const headers: IncomingHttpHeaders[] = [];
   const server: Server = createServer((req, res) => {
     requests.push(req.url ?? '');
+    headers.push(req.headers);
     handler(req, res);
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -20,6 +24,7 @@ export async function startServer(handler: Handler): Promise<TestServer> {
   return {
     url: `http://127.0.0.1:${port}`,
     requests,
+    headers,
     close: () =>
       new Promise<void>((resolve) => {
         server.closeAllConnections();

@@ -29,8 +29,6 @@ interface HomeViewProps {
   services?: readonly Service[];
   /** Projects; the first one is the featured case. */
   projects?: readonly Project[];
-  /** Project id -> public URL of its screenshot (only files that exist). */
-  projectImages?: Readonly<Record<string, string>>;
   /** Public path of the CV PDF; without it (render failed) the download button is omitted. Profile only. */
   pdfHref?: string | null;
   route: Route;
@@ -38,7 +36,7 @@ interface HomeViewProps {
 }
 
 /** One whole page (profile or services, in one language). Pure: all data arrives through props. */
-export function HomeView({ resume, architecture = null, services = [], projects = [], projectImages = {}, pdfHref = null, route, siteUrl }: HomeViewProps) {
+export function HomeView({ resume, architecture = null, services = [], projects = [], pdfHref = null, route, siteUrl }: HomeViewProps) {
   const { lang, page } = route;
   const dict = getDictionary(lang);
   const isProfile = page === 'profile';
@@ -102,7 +100,7 @@ export function HomeView({ resume, architecture = null, services = [], projects 
       ) : null}
       {!isProfile ? <ServicesSection services={services} lang={lang} dict={dict} index={indexOf('services')} /> : null}
       {hasProcess && dict.process ? <Process process={dict.process} index={indexOf('process')} /> : null}
-      <Projects projects={projects} images={projectImages} lang={lang} dict={dict} index={indexOf('projects')} />
+      <Projects projects={projects} lang={lang} dict={dict} index={indexOf('projects')} />
       <ContactSection contact={resume.contact} route={route} dict={dict} index={indexOf('contact')} />
     </>
   );

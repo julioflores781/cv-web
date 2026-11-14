@@ -1,39 +1,47 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { projectsEs } from '@/tests/fixtures/content';
+import { describe, expect, it } from 'vitest';
+import type { Project } from '@/lib/api/types';
+import { projectsEs, sampleImage } from '@/tests/fixtures/content';
 import { clientName, safeLinks } from './display';
-import { canShowImage, resolveProjectImages } from './images';
+import { canShowImage, coverOf } from './images';
 
-let dir: string;
-beforeEach(() => {
-  dir = mkdtempSync(path.join(os.tmpdir(), 'cv-web-images-'));
-  mkdirSync(path.join(dir, 'projects'));
-});
-afterEach(() => rmSync(dir, { recursive: true, force: true }));
+const [own, employer, anonymous] = projectsEs as [Project, Project, Project];
+const withImages = (project: Project, ...images: Project['images']): Project => ({ ...project, images });
 
-const touch = (id: string) => writeFileSync(path.join(dir, 'projects', `${id}.webp`), 'x');
-
-describe('resolveProjectImages', () => {
-  it('CO-T32: an own + public project with public/projects/<id>.webp gets its URL', () => {
-    touch('proyecto-propio');
-    expect(resolveProjectImages(projectsEs, dir)).toEqual({ 'proyecto-propio': '/projects/proyecto-propio.webp' });
+describe('coverOf', () => {
+  it('T413 (CO-T32): an own + public project gets its first image as the cover, with its url, alt and size', () => {
+    const cover = coverOf(withImages(own, sampleImage(1), sampleImage(2)));
+    expect(cover).toEqual({ ...sampleImage(1), url: new URL(sampleImage(1).url).toString() });
+    expect(canShowImage(own)).toBe(true);
   });
 
-  it('CO-T33: an employer or anonymous project never gets an image even when the file exists', () => {
-    touch('proyecto-empresa');
-    touch('proyecto-anonimo');
-    expect(resolveProjectImages(projectsEs, dir)).toEqual({});
-    expect(canShowImage(projectsEs[1] as (typeof projectsEs)[number])).toBe(false);
+  it('T413 (CO-T33): an employer or anonymous project never gets a cover, even if its props carry images', () => {
+    for (const project of [employer, anonymous, { ...own, disclosure: 'anonymous' as const }, { ...own, relation: 'employer' as const }]) {
+      expect(coverOf(withImages(project, sampleImage(1))), project.id).toBeUndefined();
+    }
+    expect(canShowImage(employer)).toBe(false);
   });
 
-  it('CO-T34: a missing file yields no image; an id that is not a plain slug is never looked up', () => {
-    expect(resolveProjectImages(projectsEs, dir)).toEqual({});
-    touch('x');
-    const odd = { ...(projectsEs[0] as (typeof projectsEs)[number]), id: '../projects/x' };
-    expect(resolveProjectImages([odd], dir)).toEqual({});
+  it('T413 (CO-T34): no images, or a first image whose url is not absolute https (plain http included), give no cover (no fallback to the next one)', () => {
+    expect(coverOf(own)).toBeUndefined();
+    for (const url of [
+      'http://media.example.test/a.webp',
+      'HTTP://media.example.test/a.webp',
+      'javascript:alert(1)',
+      'data:image/png;base64,AAAA',
+      '/projects/proyecto-propio.webp',
+      'media.example.test/a.webp',
+      '//media.example.test/a.webp',
+      'ftp://media.example.test/a.webp',
+      '',
+    ]) {
+      expect(coverOf(withImages(own, { ...sampleImage(1), url }, sampleImage(2))), url).toBeUndefined();
+    }
+    expect(coverOf(withImages(own, { ...sampleImage(1), url: 'HTTPS://media.example.test/a.webp' }))?.url).toBe('https://media.example.test/a.webp');
+  });
+
+  it('extra: a url with credentials is refused (it could smuggle a user:password into the HTML)', () => {
+    expect(coverOf(withImages(own, { ...sampleImage(1), url: 'https://user:pw@media.example.test/a.webp' }))).toBeUndefined();
   });
 });
 

@@ -127,6 +127,48 @@
             "description": "After the examples"
           }
         }
+      },
+      "ProjectImage": {
+        "type": "object",
+        "required": [
+          "url",
+          "alt",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "alt": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "height": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectImage"
+            }
+          }
+        }
       }
     }
   }

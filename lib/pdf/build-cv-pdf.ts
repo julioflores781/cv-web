@@ -2,6 +2,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import type { ReactElement } from 'react';
 import type { DocumentProps } from '@react-pdf/renderer';
 import { getResume } from '@/lib/api';
+import { logEvent } from '@/lib/log';
 import type { Resume } from '@/lib/api/types';
 import type { Lang } from '@/lib/i18n/config';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -34,15 +35,14 @@ function remember(key: string, lang: Lang, pending: Promise<Buffer>): void {
   // A failed render is not kept: the next request tries again.
   pending.catch((error: unknown) => {
     if (cache.get(key) === pending) cache.delete(key);
-    const reason = error instanceof Error ? error.message : String(error);
-    console.warn(`[cv-web] PDF (${lang}) failed: ${reason}; download button omitted`);
+    logEvent('warn', 'pdf_render_failed', { lang, error: error instanceof Error ? error : undefined });
   });
 }
 
 /**
  * The CV PDF of a language for the content the API returns right now. The API is asked on every call (a failure propagates, the
  * data source is not a PDF problem); rendered PDFs are kept in memory by content, so a PDF is never served for other data.
- * `null` (with a warning) if the render fails.
+ * `null` (with a `pdf_render_failed` warning) if the render fails.
  */
 export async function getCvPdf(lang: Lang, renderer: PdfRenderer = renderToBuffer): Promise<CvPdf | null> {
   const { resume } = await getResume(lang);

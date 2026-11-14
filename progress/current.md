@@ -1,6 +1,18 @@
 # Estado de la sesión
 
-Tarea en curso: ninguna (web-runtime CERRADO).
+Tarea en curso: ninguna. Fase 3 (web-admin, 10 slugs) cerrada el 2026-11-14 y mergeada a `develop` (ver `progress/web-admin/close.md`). Pendiente: PR `develop -> main` (decide Julio), verificaciones tras desplegar y dos tareas en el repo `cv` (404 deducidos en el runbook, endurecer `dryRun`).
+
+## api-observability (logs, auditoría y request id; repos `cv` y `cv-web`)
+CERRADO (5/5 slugs: api-logging-core, api-audit-log, api-business-events, web-logging, ops-log-docs). `cv`: merge `c7e59a5` en develop; `cv-web`: commits `bb336fd`, `779fbfa` + merge en develop. Detalle y pasos de PR en `progress/api-observability/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).
+- Diferido: `api-metrics` (Micrometer/Prometheus en gestión interna; no debe mover `/q/health/ready`).
+- Pendiente de la fase 3 (repo `cv-web`): panel `/admin` enviando `X-Client-IP` con la IP del navegador para que el audit la registre.
+- NO verificado: rotación de logs en el NAS, lectura en Portainer, el workflow de GitHub Actions de `cv`.
+
+## api-admin
+CERRADO (7/7 slugs, `cv`: merge `40cf2a7` en develop; `cv-web`: commit `0fbba98` + merge en develop). Detalle y pasos de PR en `progress/api-admin/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).
+- NO verificado: R2 real, regla WAF de Cloudflare para `/api/v1/admin/*`, Argon2 y `admin-password.sh` en el NAS, el workflow de GitHub Actions de `cv`.
+- Pendientes del humano: crear token R2 propio, crear la regla WAF, revocar el token de Telegram expuesto en el IDE, prueba manual contra R2.
+- Pendiente de la fase 3 (repo `cv-web`): panel `/admin`, tipos TS de `images[]`, la web pública leyendo `project.images`.
 
 ## web-runtime
 CERRADO (9/9 slugs, commits a32a159/ee102f9/04c7777, merge 35c74fb en develop). Detalle en `progress/web-runtime/close.md`.

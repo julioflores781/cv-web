@@ -1,0 +1,119 @@
+/* Contact messages, read only. Stacked by default (a phone reads it top to bottom); two columns from 900 px. Only design tokens. */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: 18px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px 24px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.name {
+  grid-column: 1 / -1;
+  margin: 0;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.email {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+}
+
+.text {
+  min-width: 0;
+}
+
+.label {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* The text exactly as it was written: its line breaks are kept and a long word cannot widen the page. */
+.body {
+  margin: 0;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line-input);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.email:focus-visible,
+.page:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (min-width: 900px) {
+  .row {
+    grid-template-columns: minmax(220px, 1fr) 2fr;
+    align-items: start;
+  }
+}

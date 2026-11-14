@@ -13,9 +13,9 @@ const READY: Resource<true> = {
 export type ApiStatus = 'up' | 'down';
 
 /** Is the CV API ready right now? One attempt, 2 s at most; any failure is `down` (the reason is never exposed). */
-export async function checkApi(): Promise<ApiStatus> {
+export async function checkApi(requestId?: string): Promise<ApiStatus> {
   try {
-    await requestJson(READY, 'es', { timeoutMs: HEALTH_TIMEOUT_MS, retries: 0 });
+    await requestJson(READY, 'es', { timeoutMs: HEALTH_TIMEOUT_MS, retries: 0, ...(requestId ? { requestId } : {}) });
     return 'up';
   } catch (error) {
     if (error instanceof ApiFetchError) return 'down';

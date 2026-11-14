@@ -1,0 +1,95 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.field {
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-input);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.field[aria-invalid="true"] {
+  border-width: 3px;
+}
+
+.hint {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.fieldError {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.button {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+/* A natively disabled action (cleanup's «Borrar N» before a simulation) must not look like an active one. */
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.secondary {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--line-input);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.field:focus-visible,
+.button:focus-visible,
+.secondary:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.status:empty {
+  display: none;
+}
+
+.countdown {
+  font-size: 14px;
+  color: var(--muted);
+}

@@ -40,6 +40,8 @@ export interface Service {
 }
 
 export type ProjectLink = Schemas['ProjectLink'];
+/** A project screenshot as the public API serves it; the first one of a project is its cover. */
+export type ProjectImage = Schemas['ProjectImage'];
 
 /** `client` is only ever set for a `public` project: the parser drops it for an `anonymous` one. */
 export interface Project {
@@ -55,4 +57,6 @@ export interface Project {
   stack: string[];
   highlights: string[];
   links: ProjectLink[];
+  /** In API order (the first is the cover); always `[]` unless the project is `own` + `public` (the parser drops the rest). */
+  images: ProjectImage[];
 }

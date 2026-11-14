@@ -11,4 +11,6 @@ export default defineConfig([
       'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
+  // The one place that writes to the console (see `tests/log-gate.test.ts`).
+  { files: ['lib/log.ts'], rules: { 'no-console': 'off' } },
 ]);

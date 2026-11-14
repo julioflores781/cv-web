@@ -1,11 +1,10 @@
-import { isIP } from 'node:net';
 import type { Lang } from '@/lib/i18n/config';
 import { parseProblem, type ProblemInfo } from '@/lib/problem';
+import { validIp } from './client-ip';
 import { getConfig } from './config';
 import { httpRequest } from './request';
 
 export const CONTACT_TIMEOUT_MS = 10_000;
-const IP_MAX_LENGTH = 45;
 
 export interface ContactPayload {
   name: string;
@@ -20,6 +19,8 @@ export interface ForwardOptions {
   payload: ContactPayload;
   /** Raw `CF-Connecting-IP` of the visitor; forwarded only when it is a valid IP address. */
   clientIp?: string | null | undefined;
+  /** Sent as `X-Request-Id` so the API log of this message carries the id of the web log line. */
+  requestId?: string | undefined;
   baseUrl?: string;
   timeoutMs?: number;
 }
@@ -33,11 +34,6 @@ export type ForwardResult =
   | { kind: 'timeout' }
   | { kind: 'unreachable' };
 
-function validIp(raw: string | null | undefined): string | undefined {
-  const value = raw?.trim();
-  return value && value.length <= IP_MAX_LENGTH && isIP(value) !== 0 ? value : undefined;
-}
-
 function readProblem(body: string): ProblemInfo | null {
   try {
     return parseProblem(JSON.parse(body));
@@ -47,14 +43,18 @@ function readProblem(body: string): ProblemInfo | null {
 }
 
 /**
- * Forwards a validated contact message to `POST /api/v1/contact/messages?lang=`. The only headers are `Content-Type` and, when valid,
+ * Forwards a validated contact message to `POST /api/v1/contact/messages?lang=`. The only headers are `Content-Type`, `X-Request-Id` and, when valid,
  * `CF-Connecting-IP` (the API rate-limits per sender); cookies, User-Agent, Referer, X-Forwarded-For and Authorization are never passed on.
  * One attempt, no retry: a retry could deliver the same message twice.
  */
-export async function forwardContact({ lang, payload, clientIp, baseUrl, timeoutMs = CONTACT_TIMEOUT_MS }: ForwardOptions): Promise<ForwardResult> {
+export async function forwardContact({ lang, payload, clientIp, requestId, baseUrl, timeoutMs = CONTACT_TIMEOUT_MS }: ForwardOptions): Promise<ForwardResult> {
   const url = `${(baseUrl ?? getConfig().apiUrl).replace(/\/+$/, '')}/api/v1/contact/messages?lang=${lang}`;
   const ip = validIp(clientIp);
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(ip ? { 'CF-Connecting-IP': ip } : {}) };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(requestId ? { 'X-Request-Id': requestId } : {}),
+    ...(ip ? { 'CF-Connecting-IP': ip } : {}),
+  };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EMPTY_ARCHITECTURE, architectureEs, projectsEs, servicesEs } from '@/tests/fixtures/content';
 import { resumeEs } from '@/tests/fixtures/resume';
+import { captureLogs, type CapturedLogs } from '@/tests/helpers/capture-log';
 import { closedPortUrl, json, startServer, type TestServer } from '@/tests/helpers/http-server';
 import { getArchitecture } from './architecture';
 import { ApiFetchError } from './errors';
@@ -13,10 +14,10 @@ import { getProjects } from './projects';
 import { getServices } from './services';
 
 let server: TestServer | undefined;
-let errorLog: ReturnType<typeof vi.spyOn>;
+let logs: CapturedLogs;
 
 beforeEach(() => {
-  errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  logs = captureLogs();
 });
 
 afterEach(async () => {
@@ -52,7 +53,11 @@ describe('content layer (no cache between calls)', () => {
     server = await startServer((_req, res) => (healthy ? json(res, 200, projectsEs) : json(res, 500, problem(500))));
     await expect(getProjects('es', fast(server.url))).rejects.toBeInstanceOf(ApiFetchError);
     expect(server.requests).toHaveLength(2);
-    expect(String(errorLog.mock.calls[0]?.[0])).toMatch(/^\[cv-web\] Projects \(es\) unavailable/);
+    // The failure is logged per attempt by requestJson (one request id), not again by the content layer.
+    expect(logs.events('api_call')).toMatchObject([
+      { path: '/api/v1/projects', outcome: 'http_error', status: 500, attempt: 1 },
+      { path: '/api/v1/projects', outcome: 'http_error', status: 500, attempt: 2 },
+    ]);
     await expect(getProjects('es', fast(server.url))).rejects.toBeInstanceOf(ApiFetchError);
     expect(server.requests).toHaveLength(4);
     healthy = true;

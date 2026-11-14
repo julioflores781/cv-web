@@ -1,8 +1,10 @@
-import http from 'node:http';
+import http, { type IncomingHttpHeaders } from 'node:http';
 import https from 'node:https';
 import type { Lang } from '@/lib/i18n/config';
 import { parseProblem } from '@/lib/problem';
 import { getConfig } from './config';
+import { logEvent } from '@/lib/log';
+import { newRequestId } from '@/lib/request-id';
 import { ApiFetchError, describeError } from './errors';
 
 export interface RequestOptions {
@@ -10,6 +12,8 @@ export interface RequestOptions {
   timeoutMs?: number;
   retries?: number;
   retryDelayMs?: number;
+  /** Id sent as `X-Request-Id` and logged with every failed attempt; one is generated when the caller has none. */
+  requestId?: string;
 }
 
 /** One API resource: where it lives and how to validate it. */
@@ -42,10 +46,18 @@ function readProblemCode(body: string): string | undefined {
 }
 
 export interface HttpRequestInit {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
-  body?: string;
+  /** Text, or raw bytes for uploads (sent as is; the caller sets `Content-Type`). */
+  body?: string | Uint8Array;
   signal: AbortSignal;
+}
+
+export interface HttpResponse {
+  status: number;
+  body: string;
+  /** Response headers as Node lowercases them (`retry-after`). */
+  headers: IncomingHttpHeaders;
 }
 
 /**
@@ -53,14 +65,16 @@ export interface HttpRequestInit {
  * transport is never cached, so every render sees what the API answers right now. Sends exactly the given headers
  * (plus the ones Node itself needs: Host, Connection and Content-Length).
  */
-export function httpRequest(url: string, { method = 'GET', headers, body, signal }: HttpRequestInit): Promise<{ status: number; body: string }> {
+export function httpRequest(url: string, { method = 'GET', headers, body, signal }: HttpRequestInit): Promise<HttpResponse> {
   return new Promise((resolve, reject) => {
     const send = url.startsWith('https:') ? https.request : http.request;
-    const request = send(url, { method, signal, ...(headers ? { headers } : {}) }, (response) => {
+    // Node frames a body by itself for POST and PUT only; a DELETE with a body would otherwise go out without a length.
+    const framed = body === undefined ? headers : { ...headers, 'Content-Length': String(typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength) };
+    const request = send(url, { method, signal, ...(framed ? { headers: framed } : {}) }, (response) => {
       response.setEncoding('utf8');
       let text = '';
       response.on('data', (chunk: string) => (text += chunk));
-      response.on('end', () => resolve({ status: response.statusCode ?? 0, body: text }));
+      response.on('end', () => resolve({ status: response.statusCode ?? 0, body: text, headers: response.headers }));
       response.on('error', reject);
     });
     request.on('error', reject);
@@ -68,9 +82,10 @@ export function httpRequest(url: string, { method = 'GET', headers, body, signal
   });
 }
 
-const httpGet = (url: string, signal: AbortSignal) => httpRequest(url, { headers: { Accept: 'application/json' }, signal });
+const httpGet = (url: string, requestId: string, signal: AbortSignal) =>
+  httpRequest(url, { headers: { Accept: 'application/json', 'X-Request-Id': requestId }, signal });
 
-async function attempt<T>(resource: Resource<T>, lang: Lang, url: string, timeoutMs: number): Promise<T> {
+async function attempt<T>(resource: Resource<T>, lang: Lang, url: string, requestId: string, timeoutMs: number): Promise<T> {
   const fail = (message: string, details: ErrorDetails = {}): ApiFetchError =>
     resource.fail ? resource.fail(lang, message, details) : new ApiFetchError(resource.name, lang, message, details);
   const controller = new AbortController();
@@ -79,18 +94,19 @@ async function attempt<T>(resource: Resource<T>, lang: Lang, url: string, timeou
     let status: number;
     let body: string;
     try {
-      const response = await httpGet(url, controller.signal);
+      const response = await httpGet(url, requestId, controller.signal);
       status = response.status;
       body = response.body;
     } catch (error) {
       const reason = controller.signal.aborted ? `timed out after ${timeoutMs} ms` : describeError(error);
-      throw fail(`request failed (${reason})`, { retryable: true, cause: error });
+      throw fail(`request failed (${reason})`, { retryable: true, outcome: controller.signal.aborted ? 'timeout' : 'unreachable' });
     }
 
     if (status !== 200) {
       const code = readProblemCode(body);
       throw fail(`API answered HTTP ${status}${code ? ` (${code})` : ''}`, {
         status,
+        outcome: 'http_error',
         retryable: status >= 500,
         ...(code === undefined ? {} : { code }),
       });
@@ -99,8 +115,9 @@ async function attempt<T>(resource: Resource<T>, lang: Lang, url: string, timeou
     let json: unknown;
     try {
       json = JSON.parse(body);
-    } catch (error) {
-      throw fail('response is not valid JSON', { status, cause: error });
+    } catch {
+      // The parse error is dropped: its message quotes a piece of the body.
+      throw fail('response is not valid JSON', { status });
     }
 
     const value = resource.parse(json);
@@ -121,13 +138,26 @@ export async function requestJson<T>(resource: Resource<T>, lang: Lang, options:
   const retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
   const url = `${baseUrl}${resource.path}?lang=${lang}`;
 
+  // One id per read, the same on every attempt, so the API log and the web log can be joined.
+  const requestId = options.requestId ?? newRequestId();
+
   let lastError: ApiFetchError | undefined;
   for (let i = 0; i <= retries; i += 1) {
+    const started = performance.now();
     try {
-      return await attempt(resource, lang, url, timeoutMs);
+      return await attempt(resource, lang, url, requestId, timeoutMs);
     } catch (error) {
       if (!(error instanceof ApiFetchError)) throw error;
       lastError = error;
+      // Never the cause, the message nor the host: they can carry URLs. Successful reads are silent (the API logs each one).
+      logEvent('warn', 'api_call', {
+        request_id: requestId,
+        path: resource.path,
+        outcome: error.outcome,
+        status: error.status,
+        attempt: i + 1,
+        duration_ms: Math.round(performance.now() - started),
+      });
       if (!error.retryable || i === retries) break;
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs * (i + 1)));
     }

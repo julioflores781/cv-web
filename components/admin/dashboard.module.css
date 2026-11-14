@@ -1,0 +1,93 @@
+/* Dashboard cards. Only design tokens; state is told by text and shape, never by colour alone. */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 16px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.card[data-state="error"] {
+  border-width: 3px;
+}
+
+.cardTitle {
+  font-size: 22px;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+.facts > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border: 1px solid var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.badge[data-ok="false"] {
+  border-width: 3px;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.empty {
+  font-weight: 600;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line-input);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 12px;
+  }
+}

@@ -1,0 +1,381 @@
+/* Content editors of the panel. Only design tokens: errors are a text prefix, an icon and a thick border, never a colour of their own. */
+
+.frame {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+.title {
+  font-size: clamp(32px, 5vw, 56px);
+  line-height: 1;
+}
+
+.intro {
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+/* Items */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.item[data-errors="true"] {
+  border-width: 3px;
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.toggle {
+  flex: 1 1 240px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.itemTitle {
+  font-weight: 600;
+}
+
+.itemId {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 2px solid var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tools {
+  display: flex;
+  gap: 4px;
+}
+
+.tool {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line-input);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tool[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.itemBody {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.add {
+  align-self: flex-start;
+}
+
+.add[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  border: 1px dashed var(--line-input);
+}
+
+/* Paired fields: the common block once, then ES and EN side by side from 900px, stacked below. */
+
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+
+.legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--line-input);
+  border-radius: 0;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+textarea.input {
+  min-height: 120px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.input[aria-invalid="true"] {
+  border-width: 3px;
+}
+
+.input[readonly],
+.input:disabled {
+  background: var(--bg2);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.check input {
+  width: 22px;
+  height: 22px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.errorIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.row > * {
+  flex: 1 1 160px;
+}
+
+.missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+}
+
+/* Save bar: stays at the bottom of the viewport while editing. */
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-top-width: 3px;
+  background: var(--bg2);
+}
+
+.comment {
+  flex: 1 1 280px;
+}
+
+.state {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 3px solid var(--ink);
+  background: var(--surface);
+}
+
+.summary:focus-visible,
+.panelTitle:focus-visible,
+.toggle:focus-visible,
+.tool:focus-visible,
+.input:focus-visible,
+.check input:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.summaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.summaryList a {
+  color: var(--ink);
+}
+
+.path {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.panelTitle {
+  font-size: 18px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.diff {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The save bar sticks to the bottom: keyboard focus (and the focus moves of the editor) scroll the target above it, never under it. */
+:global(html):has(.saveBar) {
+  scroll-padding-bottom: 10rem;
+}
+
+@media (max-width: 640px) {
+  /* The comment takes its own row (a column direction would turn its 280px basis into a height); state and «Guardar» share the next one. */
+  .saveBar {
+    gap: 8px 12px;
+  }
+
+  .comment {
+    flex-basis: 100%;
+  }
+
+  .state {
+    flex: 1 1 auto;
+  }
+
+  :global(html):has(.saveBar) {
+    scroll-padding-bottom: 15rem;
+  }
+
+  .itemHead {
+    padding: 8px;
+  }
+}

@@ -123,6 +123,97 @@ describe('deploy/docker-compose.yml', () => {
   });
 });
 
+describe('deploy/docker-compose.yml: the panel needs no new variables (T422)', () => {
+  const compose = read('deploy', 'docker-compose.yml');
+
+  it('T422: cv-web keeps exactly CV_API_URL and SITE_URL, and a comment says the panel lives in the same image with nothing else to set', () => {
+    const web = block(compose, /^ {2}cv-web:/);
+    const environment = active(block(web.split('\n').map((line) => line.slice(2)).join('\n'), /^ {2}environment:/));
+    expect([...environment.matchAll(/^\s+([A-Z_]+):/gm)].map((match) => match[1])).toEqual(['CV_API_URL', 'SITE_URL']);
+    expect(web).toMatch(/#.*\/admin/);
+  });
+
+  it('T422: .env.example documents that a plain-http SITE_URL leaves the panel cookie without Secure', () => {
+    const example = read('.env.example');
+    expect(example).toMatch(/^#.*\/admin.*Secure/im);
+    expect([...example.matchAll(/^([A-Z_]+)=/gm)].map((match) => match[1])).toEqual(['CV_API_URL', 'SITE_URL']);
+  });
+});
+
+describe('deploy/docker-compose.yml: admin and R2 variables of cv-api', () => {
+  const api = active(block(read('deploy', 'docker-compose.yml'), /^ {2}cv-api:/));
+  const value = (name: string): string | undefined => new RegExp(`^\\s+${name}:\\s*("[^"]*"|[^\\s#]+)`, 'm').exec(api)?.[1];
+
+  it('extra Da: every admin and R2 variable the API reads is declared, with the documented defaults and no unused R2_KEY_PREFIX', () => {
+    for (const name of [
+      'CV_ADMIN_JWT_SECRET',
+      'CV_ADMIN_SESSION_LIFESPAN',
+      'CV_ADMIN_LOGIN_MAX_FAILURES',
+      'CV_ADMIN_LOGIN_LOCK',
+      'CV_ADMIN_EDGE_BLOCK',
+      'R2_ENDPOINT',
+      'R2_BUCKET_NAME',
+      'R2_ACCESS_KEY_ID',
+      'R2_SECRET_ACCESS_KEY',
+      'R2_PUBLIC_URL',
+    ]) {
+      expect(value(name), name).toBeDefined();
+    }
+    expect(value('CV_ADMIN_SESSION_LIFESPAN')).toBe('PT8H');
+    expect(value('CV_ADMIN_LOGIN_MAX_FAILURES')).toBe('"5"');
+    expect(value('CV_ADMIN_LOGIN_LOCK')).toBe('PT15M');
+    expect(api).not.toMatch(/R2_KEY_PREFIX/);
+  });
+
+  it('extra Db: the Cloudflare edge guard is on, and the R2 credentials and public URL ship empty (upload disabled)', () => {
+    expect(value('CV_ADMIN_EDGE_BLOCK')).toBe('"true"');
+    for (const name of ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_PUBLIC_URL']) expect(value(name), name).toBe('""');
+    expect(value('R2_ENDPOINT')).toMatch(/^https:\/\/CAMBIA-/);
+    expect(value('R2_BUCKET_NAME')).toMatch(/^CAMBIA-/);
+  });
+
+  it('extra Dc: the JWT secret is a CAMBIA placeholder shorter than 32 characters, so an unedited compose leaves the admin disabled', () => {
+    const secret = value('CV_ADMIN_JWT_SECRET') as string;
+    expect(secret).toMatch(/^CAMBIA-/);
+    expect(secret.length).toBeLessThan(32);
+  });
+
+  it('extra Dd: the Argon2 knobs are only commented-out documentation and the container has no memory limit that would starve them', () => {
+    expect(api).not.toMatch(/CV_ADMIN_ARGON2_/);
+    expect(read('deploy', 'docker-compose.yml')).toMatch(/^\s+# CV_ADMIN_ARGON2_MEMORY_KIB:/m);
+    expect(api).not.toMatch(/mem_limit|memory:|deploy:/);
+  });
+});
+
+describe('deploy/docker-compose.yml: log rotation (D1)', () => {
+  const compose = read('deploy', 'docker-compose.yml');
+  const service = (name: string): string => active(block(compose, new RegExp(`^ {2}${name}:`)));
+
+  it('D1: every service rotates its Docker logs with json-file, max-size 10m and max-file 5', () => {
+    for (const name of ['cv-db', 'cv-api', 'cv-web']) {
+      expect(service(name), name).toMatch(
+        /^ {4}logging:\n {6}driver:\s*json-file\n {6}options:\n {8}max-size:\s*"10m"\n {8}max-file:\s*"5"\s*$/m,
+      );
+    }
+    expect(active(compose).match(/^\s+logging:/gm)).toHaveLength(3);
+  });
+
+  it('D1: the health checks are exactly the documented ones, with their timings', () => {
+    expect(service('cv-db')).toContain(
+      '    healthcheck:\n      test: ["CMD-SHELL", "pg_isready -U cv -d cv"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n',
+    );
+    expect(service('cv-api')).toContain(
+      '    healthcheck:\n      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/q/health/ready || exit 1"]\n' +
+        '      interval: 30s\n      timeout: 10s\n      retries: 3\n      start_period: 30s\n',
+    );
+    expect(service('cv-web')).toContain(
+      '    healthcheck:\n' +
+        `      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health/').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]\n` +
+        '      interval: 30s\n      timeout: 5s\n      retries: 3\n      start_period: 20s\n',
+    );
+  });
+});
+
 describe('ci workflow: docker job', () => {
   const job = block(workflow, /^ {2}docker:/);
 
@@ -138,6 +229,16 @@ describe('ci workflow: docker job', () => {
     const credentialLines = job.split('\n').filter((line) => /(token|password|secret|username)\s*:/i.test(line));
     expect(credentialLines.length).toBeGreaterThan(0);
     for (const line of credentialLines) expect(line, line).toMatch(/\$\{\{\s*secrets\./);
+  });
+
+  it('T426: the smoke also asks the panel: /admin/login/ is a 200 with X-Robots-Tag noindex and /admin/ without a cookie is a 307', () => {
+    const smoke = block(job, /^ {6}- name: Smoke test the container/);
+    expect(smoke).toContain("curl -sS -D - -o /dev/null -w '%{http_code}' http://localhost:3000/admin/login/");
+    expect(smoke).toContain("grep -qi '^x-robots-tag: noindex, nofollow'");
+    expect(smoke).toContain('[ "$(echo "$login" | tail -n 1)" = 200 ]');
+    expect(smoke).toContain(`[ "$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:3000/admin/)" = 307 ]`);
+    // The panel needs nothing new from the CI: same fake API, same two variables.
+    expect(smoke).not.toMatch(/DESIGN_ADMIN_PASSWORD|-e (?!CV_API_URL|SITE_URL)[A-Z_]+=/);
   });
 
   it('T99 (file check): the smoke stops the container with SIGTERM, accepts exit 0 or 143 and requires < 10 s', () => {

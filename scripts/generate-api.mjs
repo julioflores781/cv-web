@@ -34,6 +34,10 @@ export function resolveSource(cliArg, env = process.env) {
  */
 export function checkSchema(schema) {
   const problems = REQUIRED_PATHS.filter((p) => !schema.includes(`"${p}": {`)).map((p) => `missing path ${p}`);
+  // The admin panel and the public projects rely on `images[]` (a schema generated before the admin API lacks it).
+  const project = /\n\s+Project: \{([\s\S]*?)\n\s{8}\};/.exec(schema)?.[1] ?? '';
+  if (!/\bimages\??: /.test(project)) problems.push('Project has no images[] (url, alt, width, height)');
+  if (!/\n\s+ProjectImage: \{/.test(schema)) problems.push('missing schema ProjectImage');
   if (/@example\b/.test(schema)) problems.push('an @example is still present');
   return problems;
 }
