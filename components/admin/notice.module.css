@@ -1,0 +1,19 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: clamp(32px, 6vw, 56px);
+  line-height: 1;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}

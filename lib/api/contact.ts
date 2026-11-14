@@ -1,11 +1,10 @@
-import { isIP } from 'node:net';
 import type { Lang } from '@/lib/i18n/config';
 import { parseProblem, type ProblemInfo } from '@/lib/problem';
+import { validIp } from './client-ip';
 import { getConfig } from './config';
 import { httpRequest } from './request';
 
 export const CONTACT_TIMEOUT_MS = 10_000;
-const IP_MAX_LENGTH = 45;
 
 export interface ContactPayload {
   name: string;
@@ -34,11 +33,6 @@ export type ForwardResult =
   | { kind: 'upstream-error' }
   | { kind: 'timeout' }
   | { kind: 'unreachable' };
-
-function validIp(raw: string | null | undefined): string | undefined {
-  const value = raw?.trim();
-  return value && value.length <= IP_MAX_LENGTH && isIP(value) !== 0 ? value : undefined;
-}
 
 function readProblem(body: string): ProblemInfo | null {
   try {

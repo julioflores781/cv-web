@@ -123,6 +123,23 @@ describe('deploy/docker-compose.yml', () => {
   });
 });
 
+describe('deploy/docker-compose.yml: the panel needs no new variables (T422)', () => {
+  const compose = read('deploy', 'docker-compose.yml');
+
+  it('T422: cv-web keeps exactly CV_API_URL and SITE_URL, and a comment says the panel lives in the same image with nothing else to set', () => {
+    const web = block(compose, /^ {2}cv-web:/);
+    const environment = active(block(web.split('\n').map((line) => line.slice(2)).join('\n'), /^ {2}environment:/));
+    expect([...environment.matchAll(/^\s+([A-Z_]+):/gm)].map((match) => match[1])).toEqual(['CV_API_URL', 'SITE_URL']);
+    expect(web).toMatch(/#.*\/admin/);
+  });
+
+  it('T422: .env.example documents that a plain-http SITE_URL leaves the panel cookie without Secure', () => {
+    const example = read('.env.example');
+    expect(example).toMatch(/^#.*\/admin.*Secure/im);
+    expect([...example.matchAll(/^([A-Z_]+)=/gm)].map((match) => match[1])).toEqual(['CV_API_URL', 'SITE_URL']);
+  });
+});
+
 describe('deploy/docker-compose.yml: admin and R2 variables of cv-api', () => {
   const api = active(block(read('deploy', 'docker-compose.yml'), /^ {2}cv-api:/));
   const value = (name: string): string | undefined => new RegExp(`^\\s+${name}:\\s*("[^"]*"|[^\\s#]+)`, 'm').exec(api)?.[1];
@@ -212,6 +229,16 @@ describe('ci workflow: docker job', () => {
     const credentialLines = job.split('\n').filter((line) => /(token|password|secret|username)\s*:/i.test(line));
     expect(credentialLines.length).toBeGreaterThan(0);
     for (const line of credentialLines) expect(line, line).toMatch(/\$\{\{\s*secrets\./);
+  });
+
+  it('T426: the smoke also asks the panel: /admin/login/ is a 200 with X-Robots-Tag noindex and /admin/ without a cookie is a 307', () => {
+    const smoke = block(job, /^ {6}- name: Smoke test the container/);
+    expect(smoke).toContain("curl -sS -D - -o /dev/null -w '%{http_code}' http://localhost:3000/admin/login/");
+    expect(smoke).toContain("grep -qi '^x-robots-tag: noindex, nofollow'");
+    expect(smoke).toContain('[ "$(echo "$login" | tail -n 1)" = 200 ]');
+    expect(smoke).toContain(`[ "$(curl -sS -o /dev/null -w '%{http_code}' http://localhost:3000/admin/)" = 307 ]`);
+    // The panel needs nothing new from the CI: same fake API, same two variables.
+    expect(smoke).not.toMatch(/DESIGN_ADMIN_PASSWORD|-e (?!CV_API_URL|SITE_URL)[A-Z_]+=/);
   });
 
   it('T99 (file check): the smoke stops the container with SIGTERM, accepts exit 0 or 143 and requires < 10 s', () => {

@@ -1,9 +1,10 @@
 // @vitest-environment node
+import type { IncomingHttpHeaders } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { captureLogs } from '@/tests/helpers/capture-log';
 import { closedPortUrl, json, startServer, type TestServer } from '@/tests/helpers/http-server';
 import { ApiFetchError } from './errors';
-import { DEFAULT_RETRIES, DEFAULT_TIMEOUT_MS, requestJson, type Resource } from './request';
+import { DEFAULT_RETRIES, DEFAULT_TIMEOUT_MS, httpRequest, requestJson, type Resource } from './request';
 
 let server: TestServer | undefined;
 afterEach(async () => {
@@ -198,5 +199,51 @@ describe('requestJson', () => {
       expect(logs.lines()).toHaveLength(1);
       expect(logs.text()).not.toMatch(/CANARY|cv-api|https?:|prefix/);
     });
+  });
+});
+
+describe('httpRequest (admin transport)', () => {
+  it('T201: exposes the response headers (Retry-After)', async () => {
+    server = await startServer((_req, res) => {
+      res.writeHead(429, { 'Content-Type': 'application/json', 'Retry-After': '900' });
+      res.end('{}');
+    });
+    const response = await httpRequest(`${server.url}/x`, { signal: new AbortController().signal });
+    expect(response.status).toBe(429);
+    expect(response.headers['retry-after']).toBe('900');
+  });
+
+  it('T202: sends PUT and DELETE with a binary body (0x00 and 0xFF included) byte for byte, with its Content-Length', async () => {
+    const seen: Array<{ method: string | undefined; length: string | undefined; bytes: Buffer }> = [];
+    server = await startServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        seen.push({ method: req.method, length: req.headers['content-length'], bytes: Buffer.concat(chunks) });
+        json(res, 200, {});
+      });
+    });
+    const payload = Uint8Array.from([0x00, 0xff, 0x10, 0x00, 0xfe, 0x80]);
+    for (const method of ['PUT', 'DELETE'] as const) {
+      await httpRequest(`${server.url}/x`, { method, body: payload, signal: new AbortController().signal });
+    }
+    expect(seen.map((entry) => entry.method)).toEqual(['PUT', 'DELETE']);
+    for (const entry of seen) {
+      expect(entry.length).toBe('6');
+      expect([...entry.bytes]).toEqual([...payload]);
+    }
+  });
+
+  it('T203: requestJson still sends only Accept and X-Request-Id', async () => {
+    let received: IncomingHttpHeaders = {};
+    server = await startServer((req, res) => {
+      received = req.headers;
+      json(res, 200, { ok: true });
+    });
+    await requestJson(THING, 'es', { baseUrl: server.url, ...FAST });
+    const { host, connection, ...rest } = received;
+    void host;
+    void connection;
+    expect(Object.keys(rest).sort()).toEqual(['accept', 'x-request-id']);
   });
 });

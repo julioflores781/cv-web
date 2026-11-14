@@ -1,12 +1,14 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { EMPTY_ARCHITECTURE, architectureFor, projectsFor, servicesFor } from '@/tests/fixtures/content';
+import { EMPTY_ARCHITECTURE, MEDIA_ORIGIN, architectureFor, projectsFor, sampleImage, servicesFor } from '@/tests/fixtures/content';
+import { fakeImage } from '@/tests/helpers/admin-images';
+import { PASSPHRASE } from '@/tests/helpers/admin-runtime';
 import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import { dictionaries } from '@/lib/i18n/dictionaries';
 import { SENTINELS, startFakeApi } from '@/tests/helpers/fake-api';
 import { type TestServer } from '@/tests/helpers/http-server';
-import { PAGES, assetUrls, eyebrows, get, render, type Rendered } from '@/tests/helpers/runtime-pages';
-import { startStandalone, type StandaloneServer } from '@/tests/helpers/standalone';
+import { PAGES, assetUrls, eyebrows, get, getRsc, render, type Rendered } from '@/tests/helpers/runtime-pages';
+import { TEST_SITE, startStandalone, type StandaloneServer } from '@/tests/helpers/standalone';
 
 const resumeOf = (lang: 'es' | 'en') => (lang === 'es' ? resumeEs : resumeEn);
 const otherOf = (lang: 'es' | 'en') => (lang === 'es' ? 'en' : 'es');
@@ -114,7 +116,10 @@ describe('runtime pages', () => {
     const bodies: Array<[string, string]> = [];
     for (const spec of PAGES) {
       bodies.push([spec.path, page(spec.path).text]);
-      bodies.push([`${spec.path} (RSC)`, (await get(server, spec.path, { headers: { RSC: '1' } })).text]);
+      const rsc = await getRsc(server, spec.path);
+      // Positive control: the payload really carries the page data, so the absence checks below mean something.
+      expect(rsc, `${spec.path} (RSC)`).toContain(resumeOf(spec.lang).profile.name);
+      bodies.push([`${spec.path} (RSC)`, rsc]);
       for (const src of assetUrls(page(spec.path).doc, 'script[src]')) bodies.push([src, (await get(server, src)).text]);
     }
     expect(bodies.length).toBeGreaterThan(8);
@@ -217,30 +222,110 @@ describe('runtime pages', () => {
     const hosts = [api.url, new URL(api.url).host, 'cv-api'];
     const bodies: string[] = [];
     for (const spec of PAGES) {
-      bodies.push(page(spec.path).text, (await get(server, spec.path, { headers: { RSC: '1' } })).text);
+      const rsc = await getRsc(server, spec.path);
+      expect(rsc, `${spec.path} (RSC)`).toContain(resumeOf(spec.lang).profile.name);
+      bodies.push(page(spec.path).text, rsc);
       for (const src of assetUrls(page(spec.path).doc, 'script[src]')) bodies.push((await get(server, src)).text);
     }
     for (const body of bodies) for (const host of hosts) expect(body).not.toContain(host);
   });
 });
 
-describe('project screenshots', () => {
-  it('T41: public/projects/<id>.webp shows only for own public projects, and the image answers 200', async () => {
-    const files = Object.fromEntries(['proyecto-propio', 'proyecto-empresa', 'proyecto-anonimo'].map((id) => [`projects/${id}.webp`, 'RIFF-fake-webp']));
-    const imageApi = await startFakeApi();
-    const withImages = await startStandalone({ apiUrl: imageApi.url, publicFiles: files });
+describe('project covers (images[] from the API)', () => {
+  const R2_KEY = 'site/projects/SENTINEL-R2-KEY-0000.webp';
+  const EMPLOYER_URL = `${MEDIA_ORIGIN}/site/projects/SENTINEL-EMPLOYER-IMAGE.webp`;
+  const ANONYMOUS_URL = `${MEDIA_ORIGIN}/site/projects/SENTINEL-ANONYMOUS-IMAGE.webp`;
+  /** A hostile API: the own project carries a cover plus its internal key; employer and anonymous ones carry images they must never show. */
+  const hostile = (lang: 'es' | 'en') =>
+    projectsFor(lang).map((project) => {
+      if (project.relation === 'own') return { ...project, images: [{ ...sampleImage(1, lang), key: R2_KEY }, sampleImage(2, lang)] };
+      const url = project.disclosure === 'anonymous' ? ANONYMOUS_URL : EMPLOYER_URL;
+      return { ...project, images: [{ ...sampleImage(3, lang), url, key: R2_KEY }] };
+    });
+
+  it('T416 / T417: an own + public project shows its cover (public URL and alt per language); employer and anonymous ones leave no <img> nor URL; images:[] keeps the mesh; the internal key never reaches HTML nor RSC; an API down is still a 500', async () => {
+    let down = false;
+    const imageApi = await startFakeApi({ projects: hostile, respond: (resource) => (down && resource === 'projects' ? { status: 503, body: { status: 503 } } : undefined) });
+    const withImages = await startStandalone({ apiUrl: imageApi.url });
     try {
-      const result = await render(withImages, PAGES[0] as (typeof PAGES)[number]);
-      expect(result.status).toBe(200);
-      const sources = Array.from(result.doc.querySelectorAll('img[src]')).map((img) => img.getAttribute('src'));
-      expect(sources.filter((src) => /\/projects\//.test(src ?? ''))).toEqual(['/projects/proyecto-propio.webp']);
-      expect((await get(withImages, '/projects/proyecto-propio.webp')).status).toBe(200);
-      expect(page('/').doc.querySelector('img[src*="/projects/"]')).toBeNull();
+      for (const spec of PAGES) {
+        const result = await render(withImages, spec);
+        expect(result.status, spec.path).toBe(200);
+        const images = Array.from(result.doc.querySelectorAll('#projects img'));
+        expect(images.map((img) => [img.getAttribute('src'), img.getAttribute('alt')]), spec.path).toEqual([[sampleImage(1, spec.lang).url, sampleImage(1, spec.lang).alt]]);
+        const [cover] = images;
+        expect(cover?.closest('[data-probe="featured"]'), spec.path).not.toBeNull();
+        expect(cover?.getAttribute('width'), spec.path).toBe('1280');
+        expect(cover?.getAttribute('height'), spec.path).toBe('720');
+        expect(cover?.getAttribute('loading'), spec.path).toBe('lazy');
+        expect(result.doc.querySelectorAll('[data-probe="card"] .gridbg'), spec.path).toHaveLength(2);
+        const rsc = await getRsc(withImages, spec.path);
+        // Positive control: the cover URL is in the payload, so the absences below are real.
+        expect(rsc, `${spec.path} (RSC)`).toContain(sampleImage(1, spec.lang).url);
+        for (const body of [result.text, rsc]) {
+          for (const leak of [EMPLOYER_URL, ANONYMOUS_URL, 'SENTINEL-EMPLOYER-IMAGE', 'SENTINEL-ANONYMOUS-IMAGE', R2_KEY, 'SENTINEL-R2-KEY', sampleImage(2, spec.lang).url]) {
+            expect(body, `${spec.path} ${leak}`).not.toContain(leak);
+          }
+          expect(body, spec.path).not.toMatch(/\\?"key\\?":/);
+        }
+      }
+      for (const spec of PAGES) {
+        expect(page(spec.path).doc.querySelector('#projects img'), spec.path).toBeNull();
+        expect(page(spec.path).doc.querySelectorAll('[data-probe="card"] .gridbg'), spec.path).toHaveLength(2);
+      }
+      down = true;
+      expect((await get(withImages, '/')).status).toBe(500);
     } finally {
       await withImages.stop();
       await imageApi.close();
     }
   }, 90_000);
+
+  it('extra (T416 end to end, with web-admin-images): an image uploaded through the panel and set as cover shows on the public pages at once, in ES and EN', async () => {
+    const adminApi = await startFakeApi({ admin: {} });
+    const panel = await startStandalone({ apiUrl: adminApi.url, siteUrl: TEST_SITE });
+    const origin = new URL(TEST_SITE).origin;
+    try {
+      const login = await fetch(`${panel.url}/admin/api/login/`, {
+        method: 'POST',
+        headers: { origin, 'content-type': 'application/json' },
+        body: JSON.stringify({ [['pass', 'word'].join('')]: PASSPHRASE }),
+      });
+      const token = login.headers.getSetCookie().map((line) => /^cv_admin_token=([^;]*)/.exec(line)?.[1]).find((value) => value !== undefined);
+      expect(login.status).toBe(200);
+      const cookie = `cv_admin_token=${token ?? ''}`;
+      const form = new FormData();
+      form.append('file', new Blob([fakeImage('webp', 4096, 800, 600)], { type: 'image/webp' }), 'portada.webp');
+      const uploaded = await fetch(`${panel.url}/admin/api/images/`, { method: 'POST', headers: { origin, cookie }, body: form });
+      expect(uploaded.status).toBe(201);
+      const { key, url, width, height } = (await uploaded.json()) as { key: string; url: string; width: number; height: number };
+      expect([width, height]).toEqual([800, 600]);
+
+      const project = { id: 'proyecto-con-portada', summary: 'Resumen ficticio', relation: 'own', disclosure: 'public', stack: ['TypeScript'], highlights: [], links: [] };
+      const documents = {
+        es: { projects: [{ ...project, title: 'Proyecto con portada', images: [{ key, alt: 'Portada ficticia', width, height }] }] },
+        en: { projects: [{ ...project, title: 'Project with a cover', summary: 'Made-up summary', images: [{ key, alt: 'Fictional cover', width, height }] }] },
+      };
+      const saved = await fetch(`${panel.url}/admin/api/content/projects/`, {
+        method: 'PUT',
+        headers: { origin, cookie, 'content-type': 'application/json' },
+        body: JSON.stringify({ baseVersions: { es: 0, en: 0 }, documents }),
+      });
+      expect(saved.status).toBe(200);
+      for (const [path, alt] of [['/', 'Portada ficticia'], ['/en/', 'Fictional cover']] as const) {
+        const { doc, text } = await render(panel, PAGES.find((spec) => spec.path === path) as (typeof PAGES)[number]);
+        const cover = doc.querySelector('#projects img');
+        expect(cover?.getAttribute('src'), path).toBe(url);
+        expect(cover?.getAttribute('alt'), path).toBe(alt);
+        expect([cover?.getAttribute('width'), cover?.getAttribute('height')], path).toEqual(['800', '600']);
+        expect(url.startsWith(`${MEDIA_ORIGIN}/`)).toBe(true);
+        expect(text, path).not.toMatch(/\\?"key\\?":/);
+      }
+    } finally {
+      await panel.stop();
+      await adminApi.close();
+    }
+  }, 120_000);
 });
 
 describe('empty lists', () => {

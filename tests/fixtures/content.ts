@@ -1,4 +1,4 @@
-import type { Architecture, ArchitecturePort, PortAdapter, Project, Service } from '@/lib/api/types';
+import type { Architecture, ArchitecturePort, PortAdapter, Project, ProjectImage, Service } from '@/lib/api/types';
 import type { Lang } from '@/lib/i18n/config';
 
 /** Fictional data only («Ada Ejemplo»); the real diagram never enters the repo. */
@@ -112,6 +112,7 @@ export const projectsEs: Project[] = [
       { label: 'Abrir ejemplo', url: 'https://ejemplo.example.test/' },
       { label: 'Ver demo', url: 'https://ejemplo.example.test/demo' },
     ],
+    images: [],
   },
   {
     id: 'proyecto-empresa',
@@ -126,6 +127,7 @@ export const projectsEs: Project[] = [
     stack: ['Lenguaje Tres'],
     highlights: [],
     links: [],
+    images: [],
   },
   {
     id: 'proyecto-anonimo',
@@ -140,6 +142,7 @@ export const projectsEs: Project[] = [
     stack: [],
     highlights: [],
     links: [],
+    images: [],
   },
 ];
 
@@ -155,6 +158,19 @@ export const projectsEn: Project[] = projectsEs.map((project) => ({
   summary: `${project.summary} (EN)`,
   clientLabel: project.clientLabel ? `${project.clientLabel} (EN)` : null,
 }));
+
+/** Public origin of the fictional media bucket (the admin fake's default `mediaBase`). */
+export const MEDIA_ORIGIN = 'https://media.example.test';
+
+/** A fictional cover, as the public API serves it (`url` already composed from the R2 key). */
+export function sampleImage(n: number, lang: Lang = 'es'): ProjectImage {
+  return {
+    url: `${MEDIA_ORIGIN}/site/projects/${String(n).padStart(8, '0')}-1111-4a2b-8c3d-aaaaaaaaaaaa.webp`,
+    alt: lang === 'es' ? `Captura ficticia ${n}` : `Fictional screenshot ${n}`,
+    width: 1280,
+    height: 720,
+  };
+}
 
 export const servicesFor = (lang: Lang): Service[] => (lang === 'es' ? servicesEs : servicesEn);
 export const projectsFor = (lang: Lang): Project[] => (lang === 'es' ? projectsEs : projectsEn);

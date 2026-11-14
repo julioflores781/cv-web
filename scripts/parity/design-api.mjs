@@ -4,6 +4,7 @@
 // Usage: `npm run parity:api -- --port 4020`, then build the web with `CV_API_URL=http://localhost:4020`.
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
+import { createAdminFake, fromPublic } from './admin-fake.mjs';
 import { isMain, option } from './common.mjs';
 
 const DATA = JSON.parse(readFileSync(new URL('./design-data.json', import.meta.url), 'utf8'));
@@ -25,8 +26,23 @@ export function designResponse(pathname, lang) {
   return { status: 200, body: DATA[language][resource] };
 }
 
-export function createDesignApi() {
-  return http.createServer((req, res) => {
+/**
+ * With `DESIGN_ADMIN_PASSWORD` set, the admin contract (`/api/v1/admin/*`) is mounted over the design data, and saves show up in the public reads at once.
+ * Without it the admin routes are 404, like an API with the admin disabled.
+ * @param {Record<string, string | undefined>} [env]
+ */
+export function createDesignApi(env = process.env) {
+  const password = env.DESIGN_ADMIN_PASSWORD;
+  const admin = password
+    ? createAdminFake({
+        adminPassword: password,
+        seed: Object.fromEntries(
+          ['services', 'projects', 'architecture'].map((kind) => [kind, { es: fromPublic(kind, DATA.es[kind]), en: fromPublic(kind, DATA.en[kind]) }]),
+        ),
+      })
+    : null;
+  return http.createServer(async (req, res) => {
+    if (admin && (await admin.handle(req, res))) return;
     const url = new URL(req.url ?? '/', 'http://localhost');
     const { status, body } = req.method === 'GET'
       ? designResponse(url.pathname, url.searchParams.get('lang'))

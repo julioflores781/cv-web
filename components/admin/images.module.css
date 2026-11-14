@@ -1,0 +1,218 @@
+/* Images: uploader, image rows of a project, gallery and cleanup. Only design tokens (errors and states are text + icon + a thick border). */
+
+.uploader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.drop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 14px;
+  border: 2px dashed var(--line-input);
+  background: var(--bg2);
+}
+
+.drop[data-dragging="true"] {
+  border: 4px dashed var(--ink);
+  padding: 12px;
+}
+
+.drop[aria-disabled="true"] {
+  color: var(--muted);
+}
+
+.dropText {
+  margin: 0;
+  font-weight: 600;
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.queueItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line2);
+  overflow-wrap: anywhere;
+}
+
+.queueItem[data-state="rejected"],
+.queueItem[data-state="failed"] {
+  border: 3px solid var(--ink);
+}
+
+.fileName {
+  font-family: var(--font-mono);
+}
+
+.icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.thumb {
+  display: block;
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--line2);
+  background: var(--bg2);
+}
+
+.thumbMissing {
+  display: flex;
+  align-items: center;
+  width: 160px;
+  max-width: 100%;
+  min-height: 90px;
+  padding: 8px;
+  border: 1px dashed var(--line-input);
+  background: var(--bg2);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.imageRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 640px) {
+  .imageRow {
+    grid-template-columns: 160px 1fr;
+  }
+}
+
+.imageBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 3px solid var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line2);
+  background: var(--surface);
+}
+
+.card .thumb {
+  width: 100%;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.badge[data-use="unused"] {
+  font-weight: 400;
+}
+
+.cleanup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:is(.card, .drop) :focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
