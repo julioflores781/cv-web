@@ -102,6 +102,8 @@ services:
     # ports:
     #   - "3000:3000"
     networks: [default, padelhub]
+    # El panel /admin (fase 3) va en esta misma imagen y no necesita variables nuevas: llama a /api/v1/admin por la red interna y su cookie
+    # de sesión lleva Secure porque SITE_URL es https. La contraseña y el JWT viven en cv-api (ver arriba), nunca aquí.
     environment:
       # La web lee la API en cada render por la red interna; no hay secretos propios de la web.
       CV_API_URL: http://cv-api:8080
