@@ -12,11 +12,16 @@
 | Área | Rol |
 |------|-----|
 | `app/` | Rutas App Router (dinámicas, renderizadas por petición). `/` y `/servicios/` en español, `/en/` y `/en/services/` en inglés; `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
-| `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. |
-| `lib/api` | Cliente de la API del CV (lectura en runtime, memo solo por petición) + tipos (generados desde su OpenAPI) + `config.ts` (`CV_API_URL`, `SITE_URL`). |
+| `app/admin/` | Panel `/admin` (fase 3, solo español, noindex): login, dashboard, editores de servicios/proyectos/arquitectura, imágenes, historial, mensajes y ajustes (Server Components) + route handlers en `app/admin/api/` (únicas mutaciones). Ver «Admin» en `docs/web-standards.md`. |
+| `proxy.ts` | Puerta de `/admin` (solo presencia de la cookie; deja fuera `/admin/api/images`, decisión de Julio). La autoridad es la API. Sin logs por visita. |
+| `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. `components/admin/`: UI del panel (CSS Modules solo con tokens). |
+| `lib/api` | Cliente de la API del CV (lectura en runtime, memo solo por petición) + tipos (generados desde su OpenAPI) + `config.ts` (`CV_API_URL`, `SITE_URL`). `lib/api/admin`: cliente servidor de `/api/v1/admin` (lista blanca de cabeceras, `X-Client-IP`, nunca `CF-*`). |
+| `lib/admin` | Lógica del panel: sesión/cookie (`session.ts`, solo servidor), CSRF, envoltorio de handlers, `next` saneado, textos (`messages.ts`), modelo/validador/diff/borradores del contenido y el único `fetch` del navegador (`browser-client.ts`). |
+| `lib/projects/images.ts` | Portada pública = `images[0]` solo si `own`+`public` y URL `https:` (decisión de Julio). |
 | `lib/log.ts`, `lib/request-id.ts`, `instrumentation.ts` | Logs JSON (única salida, `logEvent`) y `X-Request-Id`. Ver «Logs» en `docs/web-standards.md`. |
 | `lib/i18n` | Diccionarios ES/EN y helpers de idioma. |
-| `Dockerfile`, `deploy/` | Imagen standalone y compose único del NAS (`cv-db`, `cv-api`, `cv-web`). El CI publica la imagen (job `docker`). |
+| `Dockerfile`, `deploy/` | Imagen standalone (incluye el panel, sin variables nuevas) y compose único del NAS (`cv-db`, `cv-api`, `cv-web`). El CI publica la imagen (job `docker`, smoke también de `/admin/login/` y `/admin/`). |
+| `scripts/parity/admin-fake.mjs` | API falsa con el contrato admin (tests y `DESIGN_ADMIN_PASSWORD=<dev> npm run parity:api`). Solo datos ficticios. |
 | `design/` | `artifact-v2/project/Main.dc.html`: referencia visual vigente. Fuente de los tokens de diseño. |
 | `progress/` | Estado del arnés: `current.md`, `history.md`, y una carpeta por tarea. |
 

@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { EMPTY_ARCHITECTURE, projectsEs, servicesEs } from '@/tests/fixtures/content';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { EMPTY_ARCHITECTURE, projectsEs, sampleImage, servicesEs } from '@/tests/fixtures/content';
 import { emptyListsResume, minimalResume, resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { HomeView } from './home-view';
@@ -203,5 +205,20 @@ describe('HomeView', () => {
     profile.unmount();
     const bare = render(<HomeView {...props} services={[]} projects={[]} route={{ lang: 'es', page: 'services' }} />);
     expect(numbers(bare.container)).toEqual(['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto']);
+  });
+
+  it('T415: HomeView and Projects take no projectImages / images map any more; the cover comes with each project, on both pages', () => {
+    for (const file of ['home-view.tsx', 'projects.tsx']) {
+      const source = readFileSync(path.join(__dirname, file), 'utf8');
+      expect(source, file).not.toMatch(/projectImages|images=\{|images:\s*Readonly/);
+    }
+    const [own, ...rest] = projectsEs;
+    const projects = [{ ...(own as (typeof projectsEs)[number]), images: [sampleImage(1)] }, ...rest];
+    for (const page of ['profile', 'services'] as const) {
+      const { container, unmount } = render(<HomeView resume={resumeEs} services={servicesEs} projects={projects} route={{ lang: 'es', page }} siteUrl={SITE} />);
+      const images = Array.from(container.querySelectorAll('#projects img'));
+      expect(images.map((img) => img.getAttribute('src')), page).toEqual([sampleImage(1).url]);
+      unmount();
+    }
   });
 });

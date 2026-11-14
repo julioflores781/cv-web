@@ -1,0 +1,55 @@
+/* Architecture editor: core columns, status legend, adapter heads and the live preview. Only design tokens: errors and the selected
+   preview language are text plus a thick border, never a colour of their own. */
+
+.core[data-invalid="true"] {
+  border: 3px solid var(--ink);
+}
+
+.core:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.statusView {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.adapterHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.langButton[aria-pressed="true"] {
+  border: 3px solid var(--ink);
+}
+
+.previewNote {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* The preview box takes the profile mode's tokens (`data-mode="profile"`), like the public hero. */
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+}

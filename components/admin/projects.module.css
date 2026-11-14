@@ -1,0 +1,144 @@
+/* Projects editor: tag lists, row lists and the image block. Only design tokens (errors are text + icon + a thick border). */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line2);
+}
+
+.group[data-invalid="true"] {
+  border: 3px solid var(--ink);
+}
+
+.group:focus-visible,
+.chipButton:focus-visible,
+.rowTool:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 3px solid var(--ink);
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 10px;
+  border: 1px solid var(--line-input);
+  background: var(--bg2);
+  overflow-wrap: anywhere;
+}
+
+.chipButton,
+.rowTool {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line-input);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chipButton {
+  border-width: 0 0 0 1px;
+}
+
+.rowTool[aria-disabled="true"] {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.adder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.adder > :first-child {
+  flex: 1 1 200px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line2);
+}
+
+.rowTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.imageHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.imageKey {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cover {
+  padding: 2px 8px;
+  border: 2px solid var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.alts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 900px) {
+  .alts {
+    grid-template-columns: 1fr 1fr;
+  }
+}

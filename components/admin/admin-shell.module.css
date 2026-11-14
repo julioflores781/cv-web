@@ -1,0 +1,87 @@
+.shell {
+  min-height: 100vh;
+}
+
+/* Off screen until it gets the focus (it is not taken out of the tab order). */
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -100px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg2);
+}
+
+.brand {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-bottom: 3px solid transparent;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.link[aria-current="page"] {
+  border-bottom-color: var(--ink);
+  font-weight: 600;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.main:focus {
+  outline: none;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 12px 16px;
+  }
+
+  .main {
+    padding: 24px 16px 48px;
+  }
+}

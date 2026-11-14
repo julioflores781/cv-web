@@ -102,7 +102,7 @@ describe('parseProjects', () => {
   it('CO-T7: a project without role, period, clientLabel, highlights or links is normalised to null / []', () => {
     const parsed = parseProjects([{ id: 'p', title: 'T', summary: 'S', relation: 'own', disclosure: 'public', stack: ['A'] }]);
     expect(parsed).toEqual([
-      { id: 'p', title: 'T', summary: 'S', relation: 'own', disclosure: 'public', role: null, client: null, clientLabel: null, period: null, stack: ['A'], highlights: [], links: [] },
+      { id: 'p', title: 'T', summary: 'S', relation: 'own', disclosure: 'public', role: null, client: null, clientLabel: null, period: null, stack: ['A'], highlights: [], links: [], images: [] },
     ]);
   });
 
@@ -113,5 +113,53 @@ describe('parseProjects', () => {
     const base = projectsEs[0] as object;
     expect(parseProjects([{ ...base, period: { start: 3 } }])).toBeNull();
     expect(parseProjects([{ ...base, links: [{ label: 'x' }] }])).toBeNull();
+  });
+});
+
+describe('parseProjects: images', () => {
+  const [own, employer, anonymous] = projectsEs as [object, object, object];
+  const image = (n: number, extra: Record<string, unknown> = {}) => ({
+    url: `https://media.example.test/site/projects/0000000${n}-1111-4a2b-8c3d-aaaaaaaaaaaa.webp`,
+    alt: `Captura ficticia ${n}`,
+    width: 1280,
+    height: 720,
+    ...extra,
+  });
+
+  it('T410: images absent or null (an API from before the admin) are normalised to []', () => {
+    const withoutImages: Record<string, unknown> = { ...own };
+    delete withoutImages.images;
+    expect(parseProjects([withoutImages])?.[0]?.images).toEqual([]);
+    expect(parseProjects([{ ...own, images: null }])?.[0]?.images).toEqual([]);
+  });
+
+  it('T411: valid images keep their order with url, alt, width and height only; a broken image makes the whole payload invalid', () => {
+    const parsed = parseProjects([{ ...own, images: [image(1, { key: 'site/projects/internal.webp' }), image(2, { alt: '' })] }]);
+    expect(parsed?.[0]?.images).toEqual([
+      { url: image(1).url, alt: 'Captura ficticia 1', width: 1280, height: 720 },
+      { url: image(2).url, alt: '', width: 1280, height: 720 },
+    ]);
+    expect(JSON.stringify(parsed)).not.toContain('internal.webp');
+    const broken: Array<Record<string, unknown>> = [
+      image(1, { url: 42 }),
+      image(1, { url: null }),
+      { url: image(1).url, width: 1280, height: 720 },
+      image(1, { alt: null }),
+      image(1, { width: 0 }),
+      image(1, { width: -3 }),
+      image(1, { height: 7.5 }),
+      image(1, { height: '720' }),
+      image(1, { width: Number.POSITIVE_INFINITY }),
+    ];
+    for (const bad of broken) expect(parseProjects([{ ...own, images: [image(2), bad] }]), JSON.stringify(bad)).toBeNull();
+    for (const notAList of [{}, 'x', 3, [null], ['https://media.example.test/a.webp']]) {
+      expect(parseProjects([{ ...own, images: notAList }]), JSON.stringify(notAList)).toBeNull();
+    }
+  });
+
+  it('T412: an employer or anonymous project with images (a hostile API) loses them in the parser', () => {
+    const parsed = parseProjects([{ ...employer, images: [image(1)] }, { ...anonymous, images: [image(2)] }, { ...own, disclosure: 'anonymous', images: [image(3)] }]);
+    expect(parsed?.map((project) => project.images)).toEqual([[], [], []]);
+    expect(JSON.stringify(parsed)).not.toContain('media.example.test');
   });
 });

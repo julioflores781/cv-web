@@ -1,24 +1,22 @@
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import type { Project } from '@/lib/api/types';
+import type { Project, ProjectImage } from '@/lib/api/types';
+import { safeHttpUrl } from '@/lib/url';
 
 /** Only the owner's own, publicly named projects may show a screenshot (an employer's or an anonymous one never does). */
 export function canShowImage(project: Pick<Project, 'relation' | 'disclosure'>): boolean {
   return project.relation === 'own' && project.disclosure === 'public';
 }
 
-/** Ids come from the API: only plain slugs are allowed in a file name. */
-const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
-
 /**
- * Convention: `public/projects/<id>.webp`. Returns `project id -> public URL` for the eligible projects whose file exists.
- * Build time only (reads the file system).
+ * The cover of a project: its first image, with the public URL the API composed from the media bucket. Undefined when the project may not show
+ * images (privacy, checked again even though the parser already enforces it) or when that first URL is not an absolute https URL without
+ * credentials (no http:, javascript:, data:, relative nor protocol-relative sources). There is no fallback to the next image.
  */
-export function resolveProjectImages(projects: readonly Project[], publicDir: string = path.join(process.cwd(), 'public')): Record<string, string> {
-  const images: Record<string, string> = {};
-  for (const project of projects) {
-    if (!canShowImage(project) || !SAFE_ID.test(project.id)) continue;
-    if (existsSync(path.join(publicDir, 'projects', `${project.id}.webp`))) images[project.id] = `/projects/${project.id}.webp`;
-  }
-  return images;
+export function coverOf(project: Pick<Project, 'relation' | 'disclosure' | 'images'>): ProjectImage | undefined {
+  const [first] = project.images;
+  if (first === undefined || !canShowImage(project)) return undefined;
+  const url = safeHttpUrl(first.url);
+  if (url === null) return undefined;
+  // https only (decided by Julio): the site is served over https, so a plain http image would be mixed content.
+  const { protocol, username, password } = new URL(url);
+  return protocol === 'https:' && username === '' && password === '' ? { ...first, url } : undefined;
 }

@@ -28,6 +28,20 @@ export async function get(server: StandaloneServer, pathname: string, init: Requ
   return { status: response.status, headers: response.headers, text: await response.text() };
 }
 
+/**
+ * The RSC payload of a page, as a client-side navigation fetches it. The standalone answers `RSC: 1` on the page URL with a 307 to `?_rsc=…`
+ * (empty body), so the redirect is followed; anything but a 200 `text/x-component` throws, so a check over it can never pass on an empty body.
+ */
+export async function getRsc(server: StandaloneServer, pathname: string): Promise<string> {
+  const response = await fetch(`${server.url}${pathname}`, { headers: { RSC: '1' } });
+  const type = response.headers.get('content-type') ?? '';
+  const text = await response.text();
+  if (response.status !== 200 || !type.startsWith('text/x-component') || text.length === 0) {
+    throw new Error(`RSC payload of ${pathname}: ${response.status} ${type} (${text.length} bytes)`);
+  }
+  return text;
+}
+
 export interface Rendered extends Fetched {
   doc: Document;
   /** Visible text: no scripts or styles, whitespace collapsed. */

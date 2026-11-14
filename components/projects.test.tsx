@@ -2,14 +2,15 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Project } from '@/lib/api/types';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { LEAKED_CLIENT, projectsEs } from '@/tests/fixtures/content';
+import { LEAKED_CLIENT, projectsEs, sampleImage } from '@/tests/fixtures/content';
 import { Projects } from './projects';
 
 const [own, employer, anonymous] = projectsEs as [Project, Project, Project];
 
-function view(projects: Project[], images: Record<string, string> = {}, lang: 'es' | 'en' = 'es') {
-  return render(<Projects projects={projects} images={images} lang={lang} dict={getDictionary(lang)} index={3} />);
+function view(projects: Project[], lang: 'es' | 'en' = 'es') {
+  return render(<Projects projects={projects} lang={lang} dict={getDictionary(lang)} index={3} />);
 }
+const withImages = (project: Project, ...images: Project['images']): Project => ({ ...project, images });
 const featured = (container: HTMLElement) => container.querySelector('[data-probe="featured"]') as HTMLElement;
 const cards = (container: HTMLElement) => Array.from(container.querySelectorAll('[data-probe="card"]'));
 
@@ -97,7 +98,7 @@ describe('Projects', () => {
 
   it('T44: an empty list keeps #projects with its h2 and the empty text in its language, no featured, cards or links', () => {
     for (const lang of ['es', 'en'] as const) {
-      const { container, unmount } = view([], {}, lang);
+      const { container, unmount } = view([], lang);
       const dict = getDictionary(lang);
       const section = container.querySelector('#projects') as HTMLElement;
       expect(section).not.toBeNull();
@@ -111,26 +112,62 @@ describe('Projects', () => {
     }
   });
 
-  it('CO-T32: an own + public project with an image shows an img with alt, width, height and lazy loading (featured and card)', () => {
-    const second = { ...own, id: 'otro-propio', title: 'Otro propio' };
-    const { container } = view([own, second], { [own.id]: '/projects/proyecto-propio.webp', 'otro-propio': '/projects/otro-propio.webp' });
+  it('CO-T32 / T414: own + public projects with a cover show <img src alt width height loading="lazy"> from the image itself (featured and card)', () => {
+    const second = withImages({ ...own, id: 'otro-propio', title: 'Otro propio' }, sampleImage(2), sampleImage(3));
+    const { container } = view([withImages(own, sampleImage(1)), second]);
     const images = Array.from(container.querySelectorAll('img'));
     expect(images).toHaveLength(2);
     for (const img of images) {
-      expect(img.getAttribute('alt')).toBeTruthy();
-      expect(img).toHaveAttribute('width');
-      expect(img).toHaveAttribute('height');
+      expect(img).toHaveAttribute('width', '1280');
+      expect(img).toHaveAttribute('height', '720');
       expect(img).toHaveAttribute('loading', 'lazy');
+      expect(img).toHaveAttribute('decoding', 'async');
     }
-    expect(featured(container).querySelector('img')).toHaveAttribute('src', '/projects/proyecto-propio.webp');
+    const [featuredImg, cardImg] = images;
+    expect(featuredImg).toHaveAttribute('src', sampleImage(1).url);
+    expect(featuredImg).toHaveAttribute('alt', sampleImage(1).alt);
+    expect(featured(container).querySelector('img')).toBe(featuredImg);
+    expect(featuredImg?.style.aspectRatio).toBe('1280 / 720');
+    expect(cardImg).toHaveAttribute('src', sampleImage(2).url);
+    expect(cardImg).toHaveAttribute('alt', sampleImage(2).alt);
+    expect(cards(container)[0]?.querySelector('.gridbg')).toBeNull();
   });
 
-  it('CO-T33: an employer or anonymous project never shows an image, even when one is available', () => {
-    const { container } = view([employer, anonymous], { [employer.id]: '/projects/a.webp', [anonymous.id]: '/projects/b.webp' });
+  it('T414: the alt follows the language of the data and falls back to the title when the image alt is empty or blank', () => {
+    const en = view([withImages(own, sampleImage(1, 'en')), withImages({ ...own, id: 'b', title: 'Second' }, { ...sampleImage(2), alt: '  ' })], 'en');
+    const [first, second] = Array.from(en.container.querySelectorAll('img'));
+    expect(first).toHaveAttribute('alt', 'Fictional screenshot 1');
+    expect(second).toHaveAttribute('alt', 'Second');
+    en.unmount();
+    const blank = view([withImages(own, { ...sampleImage(1), alt: '' })]);
+    expect(blank.container.querySelector('img')).toHaveAttribute('alt', own.title);
+  });
+
+  it('T414: a featured project with a cover but no stack still gets its side column with the image', () => {
+    const { container } = view([withImages({ ...own, stack: [] }, sampleImage(1))]);
+    expect(featured(container).querySelector('[data-probe="featured-side"] img')).not.toBeNull();
+  });
+
+  it('CO-T33: an employer or anonymous project never shows an image, even when its props carry one', () => {
+    const { container } = view([withImages(employer, sampleImage(1)), withImages(anonymous, sampleImage(2))]);
     expect(container.querySelector('img')).toBeNull();
+    expect(container.innerHTML).not.toContain('media.example.test');
   });
 
-  it('CO-T34: without a file the card uses the .gridbg block with the client or relation, no img and no «captura» text', () => {
+  it('T414: a cover whose url is not absolute https is not rendered and the card keeps its mesh block', () => {
+    const { container } = view([
+      own,
+      withImages(employer, sampleImage(1)),
+      withImages({ ...own, id: 'c' }, { ...sampleImage(1), url: 'javascript:alert(1)' }),
+      withImages({ ...own, id: 'd' }, { ...sampleImage(1), url: 'http://media.example.test/plain.webp' }),
+    ]);
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.innerHTML).not.toContain('javascript:');
+    expect(container.innerHTML).not.toContain('plain.webp');
+    expect(cards(container).every((card) => card.querySelector('.gridbg') !== null)).toBe(true);
+  });
+
+  it('CO-T34 / T414: without images the card uses the .gridbg block with the client or relation, no img and no «captura» text', () => {
     const { container } = view(projectsEs);
     const blocks = cards(container).map((card) => card.querySelector('.gridbg'));
     expect(blocks.map((block) => block?.textContent)).toEqual(['Cliente Ejemplo S.A.', 'Empresa ficticia del sector salud']);

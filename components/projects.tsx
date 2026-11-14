@@ -10,15 +10,13 @@ import styles from './projects.module.css';
 
 interface ProjectsProps {
   projects: readonly Project[];
-  /** Project id -> public URL of its screenshot (only files that exist). */
-  images: Readonly<Record<string, string>>;
   lang: Lang;
   dict: Dictionary;
   index: number;
 }
 
 /** «NN / proyectos»: the first project is the featured case, the rest are cards. Without projects the section stays, with its empty state. */
-export function Projects({ projects, images, lang, dict, index }: ProjectsProps) {
+export function Projects({ projects, lang, dict, index }: ProjectsProps) {
   const [featured, ...others] = projects;
   const { label, title, intro } = dict.sections.projects;
   return (
@@ -26,11 +24,11 @@ export function Projects({ projects, images, lang, dict, index }: ProjectsProps)
       <SectionHead row index={index} label={label} title={title} titleId="projects-title" text={intro} />
       {featured ? (
         <>
-          <ProjectFeatured project={featured} image={images[featured.id]} lang={lang} dict={dict} />
+          <ProjectFeatured project={featured} lang={lang} dict={dict} />
           {others.length > 0 ? (
             <div className={styles.grid}>
               {others.map((project) => (
-                <ProjectCard key={project.id} project={project} image={images[project.id]} dict={dict} />
+                <ProjectCard key={project.id} project={project} dict={dict} />
               ))}
             </div>
           ) : null}

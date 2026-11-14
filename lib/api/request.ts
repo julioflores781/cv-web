@@ -1,4 +1,4 @@
-import http from 'node:http';
+import http, { type IncomingHttpHeaders } from 'node:http';
 import https from 'node:https';
 import type { Lang } from '@/lib/i18n/config';
 import { parseProblem } from '@/lib/problem';
@@ -46,10 +46,18 @@ function readProblemCode(body: string): string | undefined {
 }
 
 export interface HttpRequestInit {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
-  body?: string;
+  /** Text, or raw bytes for uploads (sent as is; the caller sets `Content-Type`). */
+  body?: string | Uint8Array;
   signal: AbortSignal;
+}
+
+export interface HttpResponse {
+  status: number;
+  body: string;
+  /** Response headers as Node lowercases them (`retry-after`). */
+  headers: IncomingHttpHeaders;
 }
 
 /**
@@ -57,14 +65,16 @@ export interface HttpRequestInit {
  * transport is never cached, so every render sees what the API answers right now. Sends exactly the given headers
  * (plus the ones Node itself needs: Host, Connection and Content-Length).
  */
-export function httpRequest(url: string, { method = 'GET', headers, body, signal }: HttpRequestInit): Promise<{ status: number; body: string }> {
+export function httpRequest(url: string, { method = 'GET', headers, body, signal }: HttpRequestInit): Promise<HttpResponse> {
   return new Promise((resolve, reject) => {
     const send = url.startsWith('https:') ? https.request : http.request;
-    const request = send(url, { method, signal, ...(headers ? { headers } : {}) }, (response) => {
+    // Node frames a body by itself for POST and PUT only; a DELETE with a body would otherwise go out without a length.
+    const framed = body === undefined ? headers : { ...headers, 'Content-Length': String(typeof body === 'string' ? Buffer.byteLength(body) : body.byteLength) };
+    const request = send(url, { method, signal, ...(framed ? { headers: framed } : {}) }, (response) => {
       response.setEncoding('utf8');
       let text = '';
       response.on('data', (chunk: string) => (text += chunk));
-      response.on('end', () => resolve({ status: response.statusCode ?? 0, body: text }));
+      response.on('end', () => resolve({ status: response.statusCode ?? 0, body: text, headers: response.headers }));
       response.on('error', reject);
     });
     request.on('error', reject);

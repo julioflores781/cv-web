@@ -1,6 +1,6 @@
 # Estado de la sesión
 
-Tarea en curso: ninguna. Siguiente: web-admin (fase 3), con brief en `progress/web-admin/brief.md`.
+Tarea en curso: ninguna. Fase 3 (web-admin, 10 slugs) cerrada el 2026-11-14 y mergeada a `develop` (ver `progress/web-admin/close.md`). Pendiente: PR `develop -> main` (decide Julio), verificaciones tras desplegar y dos tareas en el repo `cv` (404 deducidos en el runbook, endurecer `dryRun`).
 
 ## api-observability (logs, auditoría y request id; repos `cv` y `cv-web`)
 CERRADO (5/5 slugs: api-logging-core, api-audit-log, api-business-events, web-logging, ops-log-docs). `cv`: merge `c7e59a5` en develop; `cv-web`: commits `bb336fd`, `779fbfa` + merge en develop. Detalle y pasos de PR en `progress/api-observability/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).

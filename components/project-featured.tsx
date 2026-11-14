@@ -3,26 +3,24 @@ import type { Lang } from '@/lib/i18n/config';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { formatPeriod } from '@/lib/i18n/format';
 import { clientName, safeLinks } from '@/lib/projects/display';
-import { canShowImage } from '@/lib/projects/images';
+import { coverOf } from '@/lib/projects/images';
 import { Cta } from './ui/cta';
 import styles from './project-featured.module.css';
 
 interface ProjectFeaturedProps {
   project: Project;
-  /** Public URL of the screenshot, when the file exists. */
-  image: string | undefined;
   lang: Lang;
   dict: Dictionary;
 }
 
-/** The featured case (the first project): facts and buttons on the left, stack and optional screenshot on the right. */
-export function ProjectFeatured({ project, image, lang, dict }: ProjectFeaturedProps) {
+/** The featured case (the first project): facts and buttons on the left, stack and optional cover on the right. */
+export function ProjectFeatured({ project, lang, dict }: ProjectFeaturedProps) {
   const badge = project.period ? (project.period.current ? dict.projects.inProduction : formatPeriod(project.period, lang)) : '';
   const role = project.role?.trim();
   const client = clientName(project);
   const links = safeLinks(project.links);
-  const screenshot = canShowImage(project) ? image : undefined;
-  const hasSide = project.stack.length > 0 || screenshot !== undefined;
+  const cover = coverOf(project);
+  const hasSide = project.stack.length > 0 || cover !== undefined;
   return (
     <article className={styles.featured} data-probe="featured">
       <div className={styles.left} data-probe="featured-left">
@@ -69,9 +67,19 @@ export function ProjectFeatured({ project, image, lang, dict }: ProjectFeaturedP
               ))}
             </ul>
           ) : null}
-          {screenshot ? (
-            // eslint-disable-next-line @next/next/no-img-element -- static export with unoptimized images; the file is checked at build time
-            <img className={styles.shot} src={screenshot} alt={project.title} width={360} height={640} loading="lazy" />
+          {cover ? (
+            // eslint-disable-next-line @next/next/no-img-element -- images are unoptimized: the cover is served as is from the media bucket
+            <img
+              className={styles.shot}
+              src={cover.url}
+              alt={cover.alt.trim() || project.title}
+              width={cover.width}
+              height={cover.height}
+              // The box keeps the cover's own ratio before it loads (CSS sets height:auto, so the ratio is stated explicitly).
+              style={{ aspectRatio: `${cover.width} / ${cover.height}` }}
+              loading="lazy"
+              decoding="async"
+            />
           ) : null}
         </div>
       ) : null}

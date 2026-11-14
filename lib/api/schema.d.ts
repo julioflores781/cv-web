@@ -555,6 +555,29 @@ export interface components {
             highlights: string[];
             /** @description Enlaces relacionados. Vacío si no aplica. */
             links: components["schemas"]["ProjectLink"][];
+            /** @description Capturas del proyecto; la primera es la portada. Vacío si no tiene. */
+            images: components["schemas"]["ProjectImage"][];
+        };
+        /** @description Captura de un proyecto. */
+        ProjectImage: {
+            /**
+             * @description URL pública de la imagen.
+             */
+            url: string;
+            /**
+             * @description Texto alternativo en el idioma pedido.
+             */
+            alt: string;
+            /**
+             * Format: int32
+             * @description Ancho en píxeles.
+             */
+            width: number;
+            /**
+             * Format: int32
+             * @description Alto en píxeles.
+             */
+            height: number;
         };
         /** @description Enlace relacionado con un proyecto. */
         ProjectLink: {

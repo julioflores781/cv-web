@@ -1,0 +1,33 @@
+.dialog {
+  max-width: min(480px, calc(100vw - 32px));
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.dialog::backdrop {
+  background: var(--line);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.title {
+  font-family: var(--font-head);
+  font-size: 24px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}

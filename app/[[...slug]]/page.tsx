@@ -5,7 +5,6 @@ import { getArchitecture, getConfig, getProjects, getResume, getServices } from 
 import { cvPdfHref } from '@/lib/pdf/files';
 import { getCvPdf } from '@/lib/pdf/build-cv-pdf';
 import { resolveRoute, type Route } from '@/lib/i18n/routes';
-import { resolveProjectImages } from '@/lib/projects/images';
 import { buildMetadata } from '@/lib/seo/metadata';
 
 interface PageProps {
@@ -43,7 +42,6 @@ export default async function Page({ params }: PageProps) {
       architecture={architecture}
       services={services}
       projects={projects}
-      projectImages={resolveProjectImages(projects)}
       pdfHref={pdfHref}
       route={route}
       siteUrl={siteUrl}

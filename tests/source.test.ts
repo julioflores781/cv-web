@@ -22,16 +22,27 @@ const production = all.filter((file) => !isTest(file));
 const rel = (files: string[]) => files.map((file) => path.relative(root, file));
 
 describe('source rules', () => {
-  it('T85 (CO-T70): fetch( only in lib/api and lib/contact/client.ts (which has no http(s):// nor process.env); process.env only in lib/api/config.ts', () => {
+  it('T85/T294 (CO-T70): fetch( only in lib/api, lib/contact/client.ts and lib/admin/browser-client.ts (neither has http(s):// nor process.env); process.env only in lib/api/config.ts', () => {
     const inApi = (file: string) => file.startsWith(path.join(root, 'lib', 'api') + path.sep);
     const contactClient = path.join(root, 'lib', 'contact', 'client.ts');
+    const adminClient = path.join(root, 'lib', 'admin', 'browser-client.ts');
     const fetchers = production.filter((file) => /\bfetch\(/.test(readFileSync(file, 'utf8')));
-    expect(rel(fetchers.filter((file) => !inApi(file) && file !== contactClient))).toEqual([]);
+    expect(rel(fetchers.filter((file) => !inApi(file) && file !== contactClient && file !== adminClient))).toEqual([]);
     expect(fetchers).toContain(contactClient);
+    expect(fetchers).toContain(adminClient);
     const envReaders = production.filter((file) => /process\.env/.test(readFileSync(file, 'utf8')));
     expect(rel(envReaders.filter((file) => !inApi(file)))).toEqual([]);
-    expect(readFileSync(contactClient, 'utf8')).not.toMatch(/https?:\/\/|process\.env/);
+    for (const client of [contactClient, adminClient]) expect(readFileSync(client, 'utf8')).not.toMatch(/https?:\/\/|process\.env/);
     expect(rel(envReaders)).toEqual([path.join('lib', 'api', 'config.ts')]);
+  });
+
+  it('T294: the session cookie name appears only in lib/admin/session.ts', () => {
+    const name = ['cv', 'admin', 'token'].join('_');
+    const holders = production.filter((file) => readFileSync(file, 'utf8').includes(name));
+    expect(rel(holders)).toEqual([path.join('lib', 'admin', 'session.ts')]);
+    const proxy = readFileSync(path.join(root, 'proxy.ts'), 'utf8');
+    expect(proxy).not.toContain(name);
+    expect(existsSync(path.join(root, 'middleware.ts'))).toBe(false);
   });
 
   it('CO-T71: lib/contact has no node:*, process.env, console.* nor storage APIs', () => {
@@ -49,6 +60,35 @@ describe('source rules', () => {
       return imports.some(([, isType, source]) => (source as string).startsWith('node:') || (!isType && /^@\/lib\/api(\/|$)/.test(source as string)));
     });
     expect(rel(offenders)).toEqual([]);
+  });
+
+  it("T295: 'use client' files never import lib/admin/session, lib/api nor node:* at runtime", () => {
+    const clients = production.filter((file) => /^\s*['"]use client['"]/.test(readFileSync(file, 'utf8')));
+    expect(clients.map((file) => path.relative(root, file))).toEqual(expect.arrayContaining([path.join('components', 'admin', 'login-form.tsx')]));
+    const offenders = clients.filter((file) => {
+      const imports = [...readFileSync(file, 'utf8').matchAll(/^import\s+(type\s+)?[^;]*?from\s+['"]([^'"]+)['"]/gm)];
+      return imports.some(([, isType, source]) => {
+        const from = source as string;
+        return !isType && (/^@\/lib\/admin\/session$/.test(from) || /^@\/lib\/api(\/|$)/.test(from) || from.startsWith('node:') || /\.\/session$/.test(from));
+      });
+    });
+    expect(rel(offenders)).toEqual([]);
+  });
+
+  it('T296: the dependencies are the ones of before the panel (no new library)', () => {
+    const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+    expect(Object.keys(pkg.dependencies).sort()).toEqual(['@fontsource/barlow-condensed', '@fontsource/ibm-plex-mono', '@fontsource/ibm-plex-sans', '@react-pdf/renderer', 'next', 'react', 'react-dom']);
+    expect(Object.keys(pkg.devDependencies)).toHaveLength(18);
+  });
+
+  it('T419: no code reads the old public screenshot folder nor calls the old file resolver; the covers come from project.images', () => {
+    const needles = [['public', 'projects'].join('/'), ['resolve', 'Project', 'Images'].join(''), ['/projects/', '.webp'].join('${project.id}')];
+    const offenders = all.filter((file) => {
+      const text = readFileSync(file, 'utf8');
+      return needles.some((needle) => text.includes(needle));
+    });
+    expect(rel(offenders)).toEqual([]);
+    expect(existsSync(path.join(root, 'public', 'projects'))).toBe(false);
   });
 
   it('T69: no debug logging call is left in the source', () => {
@@ -162,5 +202,53 @@ describe('public repository hygiene', () => {
     expect(containsSecret(['-----BEGI', 'N PRIVATE KEY-----'].join(''))).toBe(true);
     expect(containsSecret(['GH', 'P_', 'a'.repeat(20)].join(''))).toBe(false);
     expect(containsSecret('akia is a word')).toBe(false);
+  });
+});
+
+describe('panel regression: docs, secrets and fixtures', () => {
+  const read = (file: string) => readFileSync(path.join(root, file), 'utf8');
+  const emitters = [...production, path.join(root, 'proxy.ts'), path.join(root, 'instrumentation.ts')];
+  // Tracked plus untracked-but-not-ignored files, like the hygiene checks above.
+  const candidates = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' })
+    .split('\0')
+    .filter((file) => file !== '' && existsSync(path.join(root, file)));
+
+  it('T424: every log event the code emits is documented in docs/web-standards.md, which has an Admin section and names X-Client-IP', () => {
+    const events = new Set(emitters.flatMap((file) => [...readFileSync(file, 'utf8').matchAll(/logEvent\(\s*[^,]+,\s*'([a-z_]+)'/g)].map((match) => match[1] as string)));
+    expect(events.size).toBeGreaterThanOrEqual(18);
+    for (const event of ['admin_login', 'admin_messages_view', 'admin_api_call', 'admin_internal', 'admin_session_expired']) expect(events, event).toContain(event);
+    const standards = read('docs/web-standards.md');
+    expect([...events].filter((event) => !standards.includes(`\`${event}\``))).toEqual([]);
+    expect(standards).toMatch(/^## Admin/m);
+    expect(standards).toContain('X-Client-IP');
+    // The old line «no proxy.ts» is gone; the proxy is documented without a log line per visit.
+    expect(standards).not.toMatch(/no se usa `proxy\.ts`/);
+    for (const file of ['AGENTS.md', 'CLAUDE.md']) expect(read(file), file).toMatch(/\/admin/);
+  });
+
+  it('T425: the panel code, the fake API and the fixtures hold no secret nor real contact data; the people in them are fictional', () => {
+    const panel = candidates.filter((file) => /^(app\/admin|components\/admin|lib\/admin|lib\/api\/admin|proxy\.ts|scripts\/parity\/admin-fake|tests\/fixtures)/.test(file));
+    expect(panel.length).toBeGreaterThan(50);
+    expect(panel.filter((file) => containsSecret(read(file)))).toEqual([]);
+    // No JWT, bearer token or private key literal anywhere in them.
+    expect(panel.filter((file) => /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|Bearer [A-Za-z0-9._-]{20,}|PRIVATE KEY/.test(read(file)))).toEqual([]);
+
+    const data = candidates.filter((file) => file.startsWith('tests/fixtures/') || file === 'scripts/parity/admin-fake.mjs' || file.startsWith('tests/helpers/'));
+    const emails = data.flatMap((file) => [...read(file).matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[a-z]{2,}/g)].map((match) => match[0]));
+    expect(emails.length).toBeGreaterThan(0);
+    // Only the domains reserved for examples (RFC 2606).
+    expect(emails.filter((email) => !/@(?:[a-z0-9-]+\.)*example\.(?:test|com|org|net)$/.test(email))).toEqual([]);
+    expect(data.filter((file) => /\+\d{1,3}[ -]?\d{2,4}[ -]?\d{3}[ -]?\d{3}/.test(read(file)))).toEqual([]);
+    for (const file of ['tests/fixtures/resume.ts', 'tests/fixtures/content.ts', 'tests/fixtures/admin-validation-vectors.json']) expect(read(file), file).toContain('Ada Ejemplo');
+  });
+
+  it('regresion extra: the content handler validates the kind with the shared isContentKind, not a copy of the list', () => {
+    const handlers = rel(production).filter((file) => file.startsWith('app/admin/api/content/'));
+    expect(handlers.length).toBeGreaterThanOrEqual(2);
+    for (const file of handlers) {
+      const source = read(file);
+      expect(source, file).toContain('isContentKind(');
+      expect(source, file).not.toMatch(/CONTENT_KINDS|const isKind/);
+    }
   });
 });

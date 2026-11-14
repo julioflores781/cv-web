@@ -4,7 +4,7 @@ import { copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from '
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PUBLIC_SOURCE, resolveSource } from './generate-api.mjs';
+import { PUBLIC_SOURCE, checkSchema, resolveSource } from './generate-api.mjs';
 import { stripExamples } from './strip-examples.mjs';
 
 const root = path.resolve(__dirname, '..');
@@ -63,5 +63,17 @@ describe('generate-api', () => {
     expect(run(['--dry-run'], { OPENAPI_SOURCE: 'env.json' }).stdout).toContain('source: env.json');
     expect(run(['--dry-run']).stdout).toContain(`source: ${PUBLIC_SOURCE}`);
     expect(resolveSource(undefined, {})).toBe('https://cv-api.floreslab.dev/openapi.json');
+  });
+
+  it('T222: the committed schema gives Project an images[] of {url, alt, width, height} and checkSchema rejects a schema without it', () => {
+    const committed = readFileSync(path.join(root, 'lib', 'api', 'schema.d.ts'), 'utf8');
+    expect(checkSchema(committed)).toEqual([]);
+    const project = /\n\s+Project: \{([\s\S]*?)\n\s{8}\};/.exec(committed)?.[1] ?? '';
+    expect(project).toMatch(/images\??: components\["schemas"\]\["ProjectImage"\]\[\]/);
+    const image = /\n\s+ProjectImage: \{([\s\S]*?)\n\s{8}\};/.exec(committed)?.[1] ?? '';
+    for (const field of ['url: string', 'alt: string', 'width: number', 'height: number']) expect(image).toContain(field);
+
+    const withoutImages = committed.replace(/\n\s+images: components\["schemas"\]\["ProjectImage"\]\[\];/, '');
+    expect(checkSchema(withoutImages).join(' ')).toContain('images[]');
   });
 });

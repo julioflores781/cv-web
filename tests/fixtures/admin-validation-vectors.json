@@ -1,0 +1,1575 @@
+{
+ "note": "Fictional documents (Ada Ejemplo). Validation vectors use root `es`; parity paths carry no language prefix. Shared by the fake API and the editor validator.",
+ "validation": [
+  {
+   "name": "services: a valid document",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "price": {
+       "from": 1500,
+       "currency": "EUR"
+      }
+     },
+     {
+      "id": "api",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "price": null
+     }
+    ]
+   },
+   "expected": []
+  },
+  {
+   "name": "services: an empty or missing list is valid",
+   "kind": "services",
+   "document": {},
+   "expected": []
+  },
+  {
+   "name": "services: not a list",
+   "kind": "services",
+   "document": {
+    "services": {}
+   },
+   "expected": [
+    {
+     "path": "es.services",
+     "code": "INVALID_VALUE"
+    }
+   ]
+  },
+  {
+   "name": "services: unknown field at the root and in an item",
+   "kind": "services",
+   "document": {
+    "extra": 1,
+    "services": [
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "colour": "red"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.extra",
+     "code": "UNKNOWN_FIELD"
+    },
+    {
+     "path": "es.services[0].colour",
+     "code": "UNKNOWN_FIELD"
+    }
+   ]
+  },
+  {
+   "name": "services: an empty item lacks id, title and summary",
+   "kind": "services",
+   "document": {
+    "services": [
+     {}
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].id",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.services[0].title",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.services[0].summary",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "services: a blank title is missing",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "   ",
+      "summary": "Resumen ficticio"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].title",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "services: a title of 120 characters is fine, 121 is too long",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "summary": "Resumen ficticio"
+     },
+     {
+      "id": "api",
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "summary": "Resumen ficticio"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[1].title",
+     "code": "TOO_LONG"
+    }
+   ]
+  },
+  {
+   "name": "services: a title that is not text",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": 5,
+      "summary": "Resumen ficticio"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].title",
+     "code": "INVALID_VALUE"
+    }
+   ]
+  },
+  {
+   "name": "services: invalid ids",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "Bad_Id",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio"
+     },
+     {
+      "id": "trailing-",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio"
+     },
+     {
+      "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].id",
+     "code": "INVALID_ID"
+    },
+    {
+     "path": "es.services[1].id",
+     "code": "INVALID_ID"
+    },
+    {
+     "path": "es.services[2].id",
+     "code": "INVALID_ID"
+    }
+   ]
+  },
+  {
+   "name": "services: a duplicate id",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio"
+     },
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[1].id",
+     "code": "DUPLICATE_ID"
+    }
+   ]
+  },
+  {
+   "name": "services: invalid price amount and currency",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "price": {
+       "from": -1,
+       "currency": "eur"
+      }
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].price.from",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.services[0].price.currency",
+     "code": "INVALID_VALUE"
+    }
+   ]
+  },
+  {
+   "name": "services: a price that is not an object, and an unknown price field",
+   "kind": "services",
+   "document": {
+    "services": [
+     {
+      "id": "web",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "price": 10
+     },
+     {
+      "id": "api",
+      "title": "Web de ejemplo",
+      "summary": "Resumen ficticio",
+      "price": {
+       "from": 1,
+       "currency": "EUR",
+       "note": "x"
+      }
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.services[0].price",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.services[1].price.note",
+     "code": "UNKNOWN_FIELD"
+    }
+   ]
+  },
+  {
+   "name": "services: a document that is not an object",
+   "kind": "services",
+   "document": [],
+   "expected": [
+    {
+     "path": "es",
+     "code": "INVALID_VALUE"
+    }
+   ]
+  },
+  {
+   "name": "services: a null document",
+   "kind": "services",
+   "document": null,
+   "expected": [
+    {
+     "path": "es",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "projects: a valid public own project with an image",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "startDate": "2022-01",
+      "endDate": "2023-06",
+      "stack": [
+       "Java"
+      ],
+      "highlights": [
+       "Logro"
+      ],
+      "links": [
+       {
+        "label": "Ver",
+        "url": "https://example.test/p"
+       }
+      ],
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "expected": []
+  },
+  {
+   "name": "projects: too many highlights",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "highlights": [
+       "Logro 0",
+       "Logro 1",
+       "Logro 2",
+       "Logro 3",
+       "Logro 4",
+       "Logro 5",
+       "Logro 6",
+       "Logro 7",
+       "Logro 8",
+       "Logro 9",
+       "Logro 10",
+       "Logro 11",
+       "Logro 12",
+       "Logro 13",
+       "Logro 14",
+       "Logro 15",
+       "Logro 16",
+       "Logro 17",
+       "Logro 18",
+       "Logro 19",
+       "Logro 20"
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].highlights",
+     "code": "TOO_MANY"
+    }
+   ]
+  },
+  {
+   "name": "projects: blank and too long stack entries",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "stack": [
+       " ",
+       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].stack[0]",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.projects[0].stack[1]",
+     "code": "TOO_LONG"
+    }
+   ]
+  },
+  {
+   "name": "projects: relation and disclosure are required and closed sets",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "T",
+      "summary": "S",
+      "relation": "x"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].relation",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.projects[0].disclosure",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "projects: an anonymous project cannot name its client",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "anonymous",
+      "client": "Cliente Ejemplo S.A."
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].client",
+     "code": "ANONYMOUS_CLIENT_FORBIDDEN"
+    }
+   ]
+  },
+  {
+   "name": "projects: a blank client on an anonymous project is fine",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "anonymous",
+      "client": "  "
+     }
+    ]
+   },
+   "expected": []
+  },
+  {
+   "name": "projects: a public employer project needs its client",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "public"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].client",
+     "code": "CLIENT_REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "projects: months must be YYYY-MM and the end cannot precede the start",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "startDate": "2020-13"
+     },
+     {
+      "id": "p2",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "startDate": "2022-05",
+      "endDate": "2022-04"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].startDate",
+     "code": "INVALID_DATE"
+    },
+    {
+     "path": "es.projects[1].endDate",
+     "code": "INVALID_DATE"
+    }
+   ]
+  },
+  {
+   "name": "projects: an end date without a start date",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "endDate": "2022-04"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].endDate",
+     "code": "INVALID_DATE"
+    }
+   ]
+  },
+  {
+   "name": "projects: links need a label and an https URL",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "links": [
+       {
+        "url": "https://example.test"
+       },
+       {
+        "label": "x",
+        "url": "http://example.test"
+       },
+       {
+        "label": "y"
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].links[0].label",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.projects[0].links[1].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[2].url",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "projects: images are refused on employer and anonymous projects",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "public",
+      "client": "Cliente Ejemplo",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     },
+     {
+      "id": "p2",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "anonymous",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].images",
+     "code": "IMAGES_NOT_ALLOWED_FOR_PROJECT"
+    },
+    {
+     "path": "es.projects[1].images",
+     "code": "IMAGES_NOT_ALLOWED_FOR_PROJECT"
+    }
+   ]
+  },
+  {
+   "name": "projects: image key, alt and sides",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "images": [
+       {
+        "key": "site/projects/../x.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 0,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "x",
+        "width": 10
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720,
+        "extra": 1
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].images[0].key",
+     "code": "IMAGE_KEY_INVALID"
+    },
+    {
+     "path": "es.projects[0].images[1].alt",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.projects[0].images[2].width",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.projects[0].images[3].height",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.projects[0].images[4].extra",
+     "code": "UNKNOWN_FIELD"
+    }
+   ]
+  },
+  {
+   "name": "projects: more than 10 images",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].images",
+     "code": "TOO_MANY"
+    }
+   ]
+  },
+  {
+   "name": "architecture: a valid hexagon",
+   "kind": "architecture",
+   "document": {
+    "core": {
+     "name": "Dominio de ejemplo"
+    },
+    "ports": [
+     {
+      "id": "database",
+      "name": "Base de datos",
+      "adapters": [
+       {
+        "id": "store-alpha",
+        "name": "Almacén Alfa",
+        "status": "in-this-api"
+       },
+       {
+        "id": "store-beta",
+        "name": "Almacén Beta",
+        "status": "experiment",
+        "note": "Nota"
+       }
+      ],
+      "description": "Dónde se guardan los datos"
+     }
+    ]
+   },
+   "expected": []
+  },
+  {
+   "name": "architecture: the core is required",
+   "kind": "architecture",
+   "document": {
+    "ports": []
+   },
+   "expected": [
+    {
+     "path": "es.core",
+     "code": "REQUIRED"
+    }
+   ]
+  },
+  {
+   "name": "architecture: core name too long (81) and an unknown core field",
+   "kind": "architecture",
+   "document": {
+    "core": {
+     "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "colour": "red"
+    },
+    "ports": []
+   },
+   "expected": [
+    {
+     "path": "es.core.colour",
+     "code": "UNKNOWN_FIELD"
+    },
+    {
+     "path": "es.core.name",
+     "code": "TOO_LONG"
+    }
+   ]
+  },
+  {
+   "name": "architecture: adapter status is a closed set and ids repeat",
+   "kind": "architecture",
+   "document": {
+    "core": {
+     "name": "Dominio de ejemplo"
+    },
+    "ports": [
+     {
+      "id": "database",
+      "name": "Base de datos",
+      "adapters": [
+       {
+        "id": "x",
+        "name": "X",
+        "status": "nope"
+       },
+       {
+        "id": "x",
+        "name": "Y",
+        "status": "production"
+       }
+      ]
+     },
+     {
+      "id": "database",
+      "name": "Base de datos",
+      "adapters": []
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.ports[0].adapters[0].status",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.ports[0].adapters[1].id",
+     "code": "DUPLICATE_ID"
+    },
+    {
+     "path": "es.ports[1].id",
+     "code": "DUPLICATE_ID"
+    }
+   ]
+  },
+  {
+   "name": "projects: https links as java.net.URI parses them (underscore and IDN hosts, illegal characters, bad escapes, ports, IPv4/IPv6, any-case scheme)",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "enlaces-a",
+      "title": "Proyecto enlaces-a",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "links": [
+       {
+        "label": "Enlace 0",
+        "url": "https://ex_ample.test/"
+       },
+       {
+        "label": "Enlace 1",
+        "url": "https://ejemplo.españa.test/"
+       },
+       {
+        "label": "Enlace 2",
+        "url": "https://example.test/a|b"
+       },
+       {
+        "label": "Enlace 3",
+        "url": "https://example.test/%zz"
+       },
+       {
+        "label": "Enlace 4",
+        "url": "https://example.test#a#b"
+       },
+       {
+        "label": "Enlace 5",
+        "url": "https://-a.test/"
+       },
+       {
+        "label": "Enlace 6",
+        "url": "https://1.2.3/"
+       },
+       {
+        "label": "Enlace 7",
+        "url": "https://256.1.1.1/"
+       },
+       {
+        "label": "Enlace 8",
+        "url": "https:/example.test"
+       },
+       {
+        "label": "Enlace 9",
+        "url": "https://example.test:99999999999/"
+       }
+      ]
+     },
+     {
+      "id": "enlaces-b",
+      "title": "Proyecto enlaces-b",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "links": [
+       {
+        "label": "Enlace 10",
+        "url": "https://[::g]/"
+       },
+       {
+        "label": "Enlace 11",
+        "url": "HTTPS://EXAMPLE.TEST/Ruta"
+       },
+       {
+        "label": "Enlace 12",
+        "url": "https://example.test:8443/a?b=[c]#frag"
+       },
+       {
+        "label": "Enlace 13",
+        "url": "https://user@example.test/"
+       },
+       {
+        "label": "Enlace 14",
+        "url": "https://192.168.0.1/"
+       },
+       {
+        "label": "Enlace 15",
+        "url": "https://example.test/ruta/ñandú"
+       },
+       {
+        "label": "Enlace 16",
+        "url": "https://example.test./"
+       },
+       {
+        "label": "Enlace 17",
+        "url": "https://[::1]/"
+       },
+       {
+        "label": "Enlace 18",
+        "url": "https://example.test:/"
+       },
+       {
+        "label": "Enlace 19",
+        "url": "https://example.test/\ufeff"
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[0].links[0].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[1].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[2].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[3].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[4].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[5].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[6].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[7].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[8].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[0].links[9].url",
+     "code": "INVALID_URL"
+    },
+    {
+     "path": "es.projects[1].links[0].url",
+     "code": "INVALID_URL"
+    }
+   ]
+  },
+  {
+   "name": "projects: blank as Java sees it (non-breaking spaces and U+FEFF are text, U+001C-U+001F and U+3000 are blank)",
+   "kind": "projects",
+   "document": {
+    "projects": [
+     {
+      "id": "nbsp",
+      "title": "\u00a0\u00a0",
+      "summary": "\u2007",
+      "relation": "own",
+      "disclosure": "public",
+      "role": "\u202f",
+      "stack": [
+       "\u00a0"
+      ],
+      "highlights": [
+       "\ufeff"
+      ]
+     },
+     {
+      "id": "blancos",
+      "title": "\u001f",
+      "summary": "\u3000\u2028",
+      "relation": "own",
+      "disclosure": "public",
+      "stack": [
+       "\u001c"
+      ],
+      "highlights": [
+       "\u1680"
+      ]
+     },
+     {
+      "id": "anonimo",
+      "title": "Proyecto anonimo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "anonymous",
+      "client": " \u00a0"
+     },
+     {
+      "id": "anonimo-blanco",
+      "title": "Proyecto anonimo-blanco",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "anonymous",
+      "client": "\u2003\u001d"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "es.projects[1].title",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.projects[1].summary",
+     "code": "REQUIRED"
+    },
+    {
+     "path": "es.projects[1].stack[0]",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.projects[1].highlights[0]",
+     "code": "INVALID_VALUE"
+    },
+    {
+     "path": "es.projects[2].client",
+     "code": "ANONYMOUS_CLIENT_FORBIDDEN"
+    }
+   ]
+  }
+ ],
+ "parity": [
+  {
+   "name": "services: same ids and prices",
+   "kind": "services",
+   "es": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web",
+      "price": {
+       "from": 1500,
+       "currency": "EUR"
+      }
+     },
+     {
+      "id": "api",
+      "title": "api",
+      "summary": "api"
+     }
+    ]
+   },
+   "en": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web",
+      "price": {
+       "from": 1500,
+       "currency": "EUR"
+      }
+     },
+     {
+      "id": "api",
+      "title": "api",
+      "summary": "api"
+     }
+    ]
+   },
+   "expected": []
+  },
+  {
+   "name": "services: a different price and a different currency",
+   "kind": "services",
+   "es": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web",
+      "price": {
+       "from": 1500,
+       "currency": "EUR"
+      }
+     },
+     {
+      "id": "api",
+      "title": "api",
+      "summary": "api",
+      "price": {
+       "from": 1,
+       "currency": "EUR"
+      }
+     }
+    ]
+   },
+   "en": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web",
+      "price": {
+       "from": 1600,
+       "currency": "EUR"
+      }
+     },
+     {
+      "id": "api",
+      "title": "api",
+      "summary": "api",
+      "price": {
+       "from": 1,
+       "currency": "USD"
+      }
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "services[0].price",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "services[1].price",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "services: a price on one side only",
+   "kind": "services",
+   "es": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web",
+      "price": {
+       "from": 1,
+       "currency": "EUR"
+      }
+     }
+    ]
+   },
+   "en": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "services[0].price",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "services: a different id at the same position and a missing item",
+   "kind": "services",
+   "es": {
+    "services": [
+     {
+      "id": "web",
+      "title": "web",
+      "summary": "web"
+     },
+     {
+      "id": "api",
+      "title": "api",
+      "summary": "api"
+     }
+    ]
+   },
+   "en": {
+    "services": [
+     {
+      "id": "site",
+      "title": "site",
+      "summary": "site"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "services[0].id",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "services[1]",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "projects: relation, client and dates are neutral fields",
+   "kind": "projects",
+   "es": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "employer",
+      "disclosure": "public",
+      "client": "Cliente Ejemplo",
+      "startDate": "2020-01"
+     }
+    ]
+   },
+   "en": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "client": "Otro Cliente",
+      "startDate": "2020-02",
+      "endDate": "2021-01"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "projects[0].relation",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "projects[0].client",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "projects[0].startDate",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "projects[0].endDate",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "projects: titles and alt texts translate, image keys and sizes do not",
+   "kind": "projects",
+   "es": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Uno",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000002.png",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "en": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "One",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Fictional capture",
+        "width": 1280,
+        "height": 720
+       },
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000003.png",
+        "alt": "Captura ficticia",
+        "width": 640,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "projects[0].images[1].key",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "projects[0].images[1].width",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "projects: different number of images",
+   "kind": "projects",
+   "es": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "images": [
+       {
+        "key": "site/projects/00000000-0000-4000-8000-000000000001.webp",
+        "alt": "Captura ficticia",
+        "width": 1280,
+        "height": 720
+       }
+      ]
+     }
+    ]
+   },
+   "en": {
+    "projects": [
+     {
+      "id": "p1",
+      "title": "Proyecto de ejemplo",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "projects[0].images[0]",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "architecture: adapter status and port ids",
+   "kind": "architecture",
+   "es": {
+    "core": {
+     "name": "A"
+    },
+    "ports": [
+     {
+      "id": "database",
+      "name": "Base de datos",
+      "adapters": [
+       {
+        "id": "x",
+        "name": "X",
+        "status": "production"
+       }
+      ]
+     },
+     {
+      "id": "queue",
+      "name": "Base de datos",
+      "adapters": []
+     }
+    ]
+   },
+   "en": {
+    "core": {
+     "name": "B"
+    },
+    "ports": [
+     {
+      "id": "database",
+      "name": "Base de datos",
+      "adapters": [
+       {
+        "id": "x",
+        "name": "X",
+        "status": "experiment"
+       }
+      ]
+     },
+     {
+      "id": "bus",
+      "name": "Base de datos",
+      "adapters": []
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "ports[0].adapters[0].status",
+     "code": "PARITY_MISMATCH"
+    },
+    {
+     "path": "ports[1].id",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "only one language present: the missing one is the difference",
+   "kind": "services",
+   "es": {
+    "services": []
+   },
+   "en": null,
+   "expected": [
+    {
+     "path": "en",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  },
+  {
+   "name": "both languages empty",
+   "kind": "services",
+   "es": null,
+   "en": null,
+   "expected": []
+  },
+  {
+   "name": "projects: a client of non-breaking spaces is not blank for parity",
+   "kind": "projects",
+   "es": {
+    "projects": [
+     {
+      "id": "a",
+      "title": "Proyecto a",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "client": "\u00a0"
+     }
+    ]
+   },
+   "en": {
+    "projects": [
+     {
+      "id": "a",
+      "title": "Proyecto a",
+      "summary": "Resumen ficticio",
+      "relation": "own",
+      "disclosure": "public",
+      "client": " \u001f"
+     }
+    ]
+   },
+   "expected": [
+    {
+     "path": "projects[0].client",
+     "code": "PARITY_MISMATCH"
+    }
+   ]
+  }
+ ]
+}
