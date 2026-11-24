@@ -158,3 +158,52 @@ export function manyJobsResume(count: number, lang: Lang = 'es'): Resume {
     })),
   };
 }
+
+/**
+ * A fictional career (web-trajectory-split): two current jobs (the second one started later, API order kept), phases with and without
+ * client, one job with 3 achievements, one job with nothing, and partial education (no degree: only a certificate and a course).
+ */
+export function careerResume(lang: Lang = 'es'): Resume {
+  const en = lang === 'en';
+  return {
+    ...fixtureFor(lang),
+    experience: [
+      {
+        id: 'career-lead',
+        company: 'Acme Ejemplo',
+        position: en ? 'Example lead developer' : 'Desarrolladora principal de ejemplo',
+        period: { start: '2018-04', end: null, current: true },
+        summary: en ? 'Fictional current job with phases and achievements.' : 'Trabajo actual ficticio con fases y logros.',
+        phases: [
+          { title: en ? 'Phase Alpha' : 'Fase Alfa', client: 'Cliente Ejemplo Uno' },
+          { title: en ? 'Phase Beta' : 'Fase Beta' },
+        ],
+        highlights: en
+          ? ['Fictional achievement one', 'Fictional achievement two', 'Fictional achievement three']
+          : ['Logro ficticio uno', 'Logro ficticio dos', 'Logro ficticio tres'],
+      },
+      {
+        id: 'career-side',
+        company: 'Globex Ejemplo',
+        position: en ? 'Example consultant' : 'Consultora de ejemplo',
+        period: { start: '2021-09', end: null, current: true },
+        phases: [{ title: en ? 'Phase Gamma' : 'Fase Gamma', client: null }],
+        highlights: [],
+      },
+      {
+        id: 'career-past',
+        company: 'Initech Ejemplo',
+        position: en ? 'Example analyst' : 'Analista de ejemplo',
+        period: { start: '2012-01', end: '2017-12', current: false },
+        summary: en ? 'Fictional past job with nothing else.' : 'Trabajo pasado ficticio sin nada más.',
+        phases: [],
+        highlights: [],
+      },
+    ],
+    education: {
+      education: [],
+      certificates: [{ name: en ? 'Example Certificate' : 'Certificado Ejemplo', issuer: en ? 'Example Body' : 'Entidad Ejemplo' }],
+      courses: [{ name: en ? 'Example Course' : 'Curso Ejemplo' }],
+    },
+  };
+}

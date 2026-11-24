@@ -114,6 +114,10 @@ jobs:
           curl -fsS http://localhost:3000/api/health/ | grep -q '"status":"ok"' || fail "/api/health/ is not ok"
           curl -fsS http://localhost:3000/ | grep -q '<h1' || fail "/ has no <h1>"
           curl -fsS http://localhost:3000/en/ | grep -q 'lang="en"' || fail "/en/ has no lang=en"
+          # Services is the home page; the profile lives in /perfil/ and the old services URLs answer a permanent 308.
+          curl -fsS http://localhost:3000/perfil/ | grep -q '<h1' || fail "/perfil/ has no <h1>"
+          [ "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost:3000/servicios/)" = '308 http://localhost:3000/' ] || fail "/servicios/ is not a 308 to /"
+          [ "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost:3000/en/services/)" = '308 http://localhost:3000/en/' ] || fail "/en/services/ is not a 308 to /en/"
           curl -fsS http://localhost:3000/sitemap.xml | grep -q 'floreslab.dev' || fail "sitemap.xml has no floreslab.dev"
           [ "$(curl -fsS http://localhost:3000/cv-julio-flores-es.pdf | head -c 5)" = '%PDF-' ] || fail "the PDF is not a PDF"
           # The panel (/admin) ships in the same image and needs nothing more: its login is a noindex 200 and, without a session, /admin/ sends there.

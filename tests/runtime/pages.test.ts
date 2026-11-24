@@ -5,9 +5,10 @@ import { fakeImage } from '@/tests/helpers/admin-images';
 import { PASSPHRASE } from '@/tests/helpers/admin-runtime';
 import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import { dictionaries } from '@/lib/i18n/dictionaries';
+import { interpolate } from '@/lib/i18n/format';
 import { SENTINELS, startFakeApi } from '@/tests/helpers/fake-api';
 import { type TestServer } from '@/tests/helpers/http-server';
-import { PAGES, assetUrls, eyebrows, get, getRsc, render, type Rendered } from '@/tests/helpers/runtime-pages';
+import { OLD_SERVICES, PAGES, assetUrls, eyebrows, get, getRsc, render, type Mode, type Rendered } from '@/tests/helpers/runtime-pages';
 import { TEST_SITE, startStandalone, type StandaloneServer } from '@/tests/helpers/standalone';
 
 const resumeOf = (lang: 'es' | 'en') => (lang === 'es' ? resumeEs : resumeEn);
@@ -30,7 +31,8 @@ afterAll(async () => {
 });
 
 describe('runtime pages', () => {
-  it('T27: the 4 pages answer 200 text/html with the right lang and data-mode and a non-cacheable Cache-Control', () => {
+  it('HS-T16 (T27): the 4 new routes answer 200 text/html with the right lang, data-mode services on / and /en/ and profile on /perfil/ and /en/profile/, and a non-cacheable Cache-Control', () => {
+    expect(PAGES.map((spec) => `${spec.path} ${spec.lang} ${spec.mode}`)).toEqual(['/ es services', '/perfil/ es profile', '/en/ en services', '/en/profile/ en profile']);
     for (const spec of PAGES) {
       const result = page(spec.path);
       expect(result.status, spec.path).toBe(200);
@@ -43,16 +45,45 @@ describe('runtime pages', () => {
     }
   });
 
-  it('T28: unknown languages and paths are 404 and a missing trailing slash is a 308; none of them calls the API', async () => {
+  it('HS-T17: /servicios/, /en/services/ and /servicios/?utm_source=ejemplo answer a 308 with a relative Location (/, /en/, /?utm_source=ejemplo) and never call the API', async () => {
     const before = api.requests.length;
-    for (const path of ['/fr/', '/en/servicios/', '/zzz/']) expect((await get(server, path)).status, path).toBe(404);
-    const redirect = await get(server, '/servicios');
-    expect(redirect.status).toBe(308);
-    expect(new URL(redirect.headers.get('location') as string, server.url).pathname).toBe('/servicios/');
+    const cases = [...OLD_SERVICES, { path: '/servicios/?utm_source=ejemplo', location: '/?utm_source=ejemplo' }];
+    for (const { path, location } of cases) {
+      const result = await get(server, path);
+      expect(result.status, path).toBe(308);
+      const header = result.headers.get('location') ?? '';
+      expect(header, path).toBe(location);
+      for (const host of ['http', new URL(server.url).host, new URL(api.url).host, 'cv-api']) expect(header, `${path} ${host}`).not.toContain(host);
+    }
     expect(api.requests.slice(before)).toEqual([]);
   });
 
-  it('T29: one h1 and the landmarks, own title/description/canonical, 3 reciprocal hreflang, og:* and a Person JSON-LD in the page language', () => {
+  it('HS-T18: /servicios and /en/services without the slash reach / and /en/ in two 308 hops (first to the slashed form), with no 404 on the way', async () => {
+    for (const [start, hops] of [['/servicios', ['/servicios/', '/']], ['/en/services', ['/en/services/', '/en/']]] as const) {
+      let current: string = start;
+      for (const hop of hops) {
+        const result = await get(server, current);
+        expect(result.status, current).toBe(308);
+        const next = new URL(result.headers.get('location') as string, server.url).pathname;
+        expect(next, current).toBe(hop);
+        current = next;
+      }
+      expect((await get(server, current)).status, current).toBe(200);
+    }
+  });
+
+  it('HS-T19 (T28): unknown languages, the profile slug in the wrong language, the old services slug in EN, extra segments and unknown paths are 404; a missing trailing slash is a 308; none of them calls the API', async () => {
+    const before = api.requests.length;
+    for (const path of ['/fr/', '/en/perfil/', '/profile/', '/en/servicios/', '/perfil/x/', '/zzz/']) expect((await get(server, path)).status, path).toBe(404);
+    for (const path of ['/perfil', '/en/profile']) {
+      const redirect = await get(server, path);
+      expect(redirect.status, path).toBe(308);
+      expect(new URL(redirect.headers.get('location') as string, server.url).pathname, path).toBe(`${path}/`);
+    }
+    expect(api.requests.slice(before)).toEqual([]);
+  });
+
+  it('HS-T20 (T29): one h1 and the landmarks, own title (the services one on /), description and canonical, 3 reciprocal hreflang of its pair, og:url = canonical and a Person JSON-LD pointing to the profile of the language', () => {
     const h1 = new Map<string, string>();
     for (const spec of PAGES) {
       const { doc } = page(spec.path);
@@ -64,6 +95,7 @@ describe('runtime pages', () => {
       h1.set(spec.path, doc.querySelector('h1')?.textContent ?? '');
 
       expect(doc.title, spec.path).toContain('Ada Ejemplo');
+      if (spec.mode === 'services') expect(doc.title, spec.path).toBe(interpolate(dictionaries[spec.lang].meta.services.title, { name: 'Ada Ejemplo' }));
       expect(doc.querySelector('meta[name="description"]')?.getAttribute('content'), spec.path).toBeTruthy();
       expect(doc.querySelector('link[rel="canonical"]')?.getAttribute('href'), spec.path).toBe(spec.canonical);
       const homologue = PAGES.filter((candidate) => candidate.mode === spec.mode);
@@ -81,11 +113,37 @@ describe('runtime pages', () => {
       const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
       expect(scripts, spec.path).toHaveLength(1);
       const data = JSON.parse(scripts[0]?.textContent ?? '') as Record<string, unknown>;
-      expect(data).toMatchObject({ '@type': 'Person', name: 'Ada Ejemplo', inLanguage: spec.lang });
+      const profile = PAGES.find((candidate) => candidate.mode === 'profile' && candidate.lang === spec.lang);
+      expect(data, spec.path).toMatchObject({ '@type': 'Person', name: 'Ada Ejemplo', inLanguage: spec.lang, url: profile?.canonical });
     }
-    expect(h1.get('/')).not.toBe(h1.get('/servicios/'));
+    expect(h1.get('/')).not.toBe(h1.get('/perfil/'));
     expect(h1.get('/')).not.toBe(h1.get('/en/'));
     expect(new Set(PAGES.map((spec) => page(spec.path).doc.title)).size).toBe(4);
+  });
+
+  it('HS-T21: the logo goes to #inicio on / and /en/ and to / or /en/ from the profiles, the toggle lists Servicios before Perfil / CV, the profile segment is the header’s only link to it, and the cajetín sheets follow the pages', () => {
+    const sheets: Record<string, string> = { '/': '01 / 02 · Servicios', '/perfil/': '02 / 02 · Perfil', '/en/': '01 / 02 · Services', '/en/profile/': '02 / 02 · Profile' };
+    for (const spec of PAGES) {
+      const { doc } = page(spec.path);
+      const home = PAGES.find((candidate) => candidate.mode === 'services' && candidate.lang === spec.lang) as (typeof PAGES)[number];
+      const profile = PAGES.find((candidate) => candidate.mode === 'profile' && candidate.lang === spec.lang) as (typeof PAGES)[number];
+      const header = doc.querySelector('header') as Element;
+      expect(header.querySelector('[data-probe="logo"]')?.getAttribute('href'), spec.path).toBe(spec.mode === 'services' ? '#inicio' : home.path);
+      if (spec.mode === 'services') expect(doc.getElementById('inicio'), spec.path).not.toBeNull();
+
+      const segments = Array.from(header.querySelectorAll('[data-probe="toggle"] a'));
+      const labels = dictionaries[spec.lang].mode;
+      expect(segments.map((a) => [a.textContent, a.getAttribute('href')]), spec.path).toEqual([
+        [labels.services, home.path],
+        [labels.profile, profile.path],
+      ]);
+      expect(labels.profile).toBe(spec.lang === 'es' ? 'Perfil / CV' : 'Profile / CV');
+      expect(segments.map((a) => a.getAttribute('aria-current')), spec.path).toEqual(spec.mode === 'services' ? ['page', null] : [null, 'page']);
+      expect(Array.from(header.querySelectorAll(`a[href="${profile.path}"]`)), spec.path).toEqual([segments[1]]);
+
+      const cells = Array.from(doc.querySelectorAll('[data-probe="cajetin"] dd')).map((dd) => dd.textContent);
+      expect(cells.at(-1), spec.path).toBe(sheets[spec.path]);
+    }
   });
 
   it("T30: Ada's data appears in each page's own language, never mixed", () => {
@@ -111,8 +169,9 @@ describe('runtime pages', () => {
     }
   });
 
-  it('T31: the private sentinels and labels sent by the API are in no HTML, RSC payload or JS chunk', async () => {
+  it('HS-T25 (T31, T36): the private sentinels and labels sent by the API, and the API URL (CV_API_URL, cv-api), are in no HTML, RSC payload or JS chunk of the 4 new routes, nor in the 308 answers of the old URLs', async () => {
     const labels = /\b(phone|telephone|birthdate|dni)\b|tel[eé]fono|nacimiento|\bbirth\b/i;
+    const hosts = [api.url, new URL(api.url).host, 'cv-api'];
     const bodies: Array<[string, string]> = [];
     for (const spec of PAGES) {
       bodies.push([spec.path, page(spec.path).text]);
@@ -122,12 +181,19 @@ describe('runtime pages', () => {
       bodies.push([`${spec.path} (RSC)`, rsc]);
       for (const src of assetUrls(page(spec.path).doc, 'script[src]')) bodies.push([src, (await get(server, src)).text]);
     }
-    expect(bodies.length).toBeGreaterThan(8);
-    const offenders = bodies.filter(([, text]) => Object.values(SENTINELS).some((value) => text.includes(value)) || labels.test(text)).map(([name]) => name);
+    for (const path of [...OLD_SERVICES.map((old) => old.path), '/servicios', '/en/services']) {
+      const redirect = await get(server, path);
+      expect(redirect.status, path).toBe(308);
+      bodies.push([`${path} (308)`, `${redirect.text}\n${redirect.headers.get('location') ?? ''}\n${redirect.headers.get('refresh') ?? ''}`]);
+    }
+    expect(bodies.length).toBeGreaterThan(12);
+    const offenders = bodies
+      .filter(([, text]) => Object.values(SENTINELS).some((value) => text.includes(value)) || labels.test(text) || hosts.some((host) => text.includes(host)))
+      .map(([name]) => name);
     expect(offenders).toEqual([]);
   });
 
-  it("T32: the plane with Ada's ports and a noscript per port, the services and projects, and the section numbering", () => {
+  it("TR-T26 (T32): the plane with Ada's ports and a noscript per port, the services and projects, and the section numbering by (mode, lang)", () => {
     for (const spec of PAGES) {
       const { text, doc, visible } = page(spec.path);
       const architecture = architectureFor(spec.lang);
@@ -157,10 +223,14 @@ describe('runtime pages', () => {
         expect(doc.querySelector('aside'), spec.path).toBeNull();
       }
     }
-    expect(eyebrows(page('/servicios/').doc)).toEqual(['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto']);
-    expect(eyebrows(page('/en/services/').doc)).toEqual(['01 / services', '02 / process', '03 / projects', '04 / contact']);
-    expect(eyebrows(page('/').doc)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
-    expect(eyebrows(page('/en/').doc)).toEqual(['01 / career', '02 / architecture', '03 / projects', '04 / contact']);
+    // Indexed by (mode, lang), never by path, so moving the routes does not touch this table.
+    const expected: Record<`${Mode}|${'es' | 'en'}`, string[]> = {
+      'profile|es': ['01 / trayectoria', '02 / formación', '03 / arquitectura', '04 / proyectos', '05 / contacto'],
+      'profile|en': ['01 / career', '02 / education', '03 / architecture', '04 / projects', '05 / contact'],
+      'services|es': ['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto'],
+      'services|en': ['01 / services', '02 / process', '03 / projects', '04 / contact'],
+    };
+    for (const spec of PAGES) expect(eyebrows(page(spec.path).doc), spec.path).toEqual(expected[`${spec.mode}|${spec.lang}`]);
   });
 
   it('T33: external links are noopener noreferrer, every #anchor has its id, fonts come from /_next/static/media, no Google Fonts, the favicon answers 200 and no placeholder is left', async () => {
@@ -195,39 +265,8 @@ describe('runtime pages', () => {
     }
   });
 
-  it('T34: one page makes exactly one API request per resource and language, although generateMetadata and Page both read', async () => {
-    const reader = await startFakeApi();
-    const isolated = await startStandalone({ apiUrl: reader.url });
-    try {
-      expect((await get(isolated, '/servicios/')).status).toBe(200);
-      expect(reader.requests.slice().sort()).toEqual(
-        ['architecture', 'projects', 'resume', 'services'].map((resource) => `/api/v1/${resource}?lang=es`).sort(),
-      );
-      const before = reader.requests.length;
-      expect((await get(isolated, '/en/')).status).toBe(200);
-      expect(reader.requests.slice(before).sort()).toEqual(
-        ['architecture', 'projects', 'resume', 'services'].map((resource) => `/api/v1/${resource}?lang=en`).sort(),
-      );
-    } finally {
-      await isolated.stop();
-      await reader.close();
-    }
-  }, 60_000);
-
   it('extra (BA-T51): the two hexagon grid backgrounds are served', async () => {
     for (const file of ['hex-grid-plano.svg', 'hex-grid-obra.svg']) expect((await get(server, `/${file}`)).status, file).toBe(200);
-  });
-
-  it('T36: the API URL (CV_API_URL, cv-api) is in no HTML, RSC payload or JS chunk', async () => {
-    const hosts = [api.url, new URL(api.url).host, 'cv-api'];
-    const bodies: string[] = [];
-    for (const spec of PAGES) {
-      const rsc = await getRsc(server, spec.path);
-      expect(rsc, `${spec.path} (RSC)`).toContain(resumeOf(spec.lang).profile.name);
-      bodies.push(page(spec.path).text, rsc);
-      for (const src of assetUrls(page(spec.path).doc, 'script[src]')) bodies.push((await get(server, src)).text);
-    }
-    for (const body of bodies) for (const host of hosts) expect(body).not.toContain(host);
   });
 });
 
@@ -329,7 +368,7 @@ describe('project covers (images[] from the API)', () => {
 });
 
 describe('empty lists', () => {
-  it('T50: an API with empty services, projects and architecture gives 200 on the 4 pages with the three empty texts in their language, no Ada content in them, JSON-LD, one h1 and no broken anchors', async () => {
+  it('HS-T26 (T50, T34): empty services, projects and architecture give 200 on the 4 new routes with their empty texts (empty.services only on / and /en/); with a clean API, / and /en/profile/ make one request per resource and language', async () => {
     const emptyApi = await startFakeApi({ services: () => [], projects: () => [], architecture: () => EMPTY_ARCHITECTURE });
     const emptyServer = await startStandalone({ apiUrl: emptyApi.url });
     try {
@@ -365,5 +404,23 @@ describe('empty lists', () => {
       await emptyServer.stop();
       await emptyApi.close();
     }
-  }, 90_000);
+
+    // One page makes exactly one API request per resource and language, although generateMetadata and Page both read.
+    const reader = await startFakeApi();
+    const isolated = await startStandalone({ apiUrl: reader.url });
+    try {
+      expect((await get(isolated, '/')).status).toBe(200);
+      expect(reader.requests.slice().sort()).toEqual(
+        ['architecture', 'projects', 'resume', 'services'].map((resource) => `/api/v1/${resource}?lang=es`).sort(),
+      );
+      const before = reader.requests.length;
+      expect((await get(isolated, '/en/profile/')).status).toBe(200);
+      expect(reader.requests.slice(before).sort()).toEqual(
+        ['architecture', 'projects', 'resume', 'services'].map((resource) => `/api/v1/${resource}?lang=en`).sort(),
+      );
+    } finally {
+      await isolated.stop();
+      await reader.close();
+    }
+  }, 150_000);
 });

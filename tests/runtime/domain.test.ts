@@ -39,7 +39,7 @@ function getWithHost(pathname: string, host: string): Promise<{ status: number; 
 }
 
 describe('runtime domain', () => {
-  it('T88: with SITE_URL=https://example.test, canonical, hreflang, OG, JSON-LD, sitemap and robots use that origin (read at runtime)', async () => {
+  it('HS-T23 (T88): with SITE_URL=https://example.test, canonical, hreflang, OG, JSON-LD (url = SITE/perfil/), the sitemap with the 4 new URLs and robots use that origin (read at runtime)', async () => {
     const home = await get(server, '/');
     expect(home.status).toBe(200);
     const doc = new JSDOM(home.text).window.document;
@@ -49,13 +49,13 @@ describe('runtime domain', () => {
     for (const href of alternates) expect(href?.startsWith(`${SITE}/`)).toBe(true);
     expect(doc.querySelector('meta[property="og:url"]')?.getAttribute('content')).toBe(`${SITE}/`);
     const ld = JSON.parse(doc.querySelector('script[type="application/ld+json"]')?.textContent ?? '{}') as { url?: string };
-    expect(ld.url).toBe(`${SITE}/`);
+    expect(ld.url).toBe(`${SITE}/perfil/`);
     expect(home.text).not.toContain('floreslab.dev');
 
     const sitemap = await get(server, '/sitemap.xml');
     expect(sitemap.status).toBe(200);
     const locs = [...sitemap.text.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-    expect(locs.sort()).toEqual([`${SITE}/`, `${SITE}/servicios/`, `${SITE}/en/`, `${SITE}/en/services/`].sort());
+    expect(locs.sort()).toEqual([`${SITE}/`, `${SITE}/perfil/`, `${SITE}/en/`, `${SITE}/en/profile/`].sort());
     const links = [...sitemap.text.matchAll(/<xhtml:link[^>]*href="([^"]+)"/g)].map((match) => match[1] as string);
     expect(links).toHaveLength(12);
     for (const href of links) expect(href.startsWith(`${SITE}/`)).toBe(true);

@@ -5,6 +5,7 @@ import { buildPersonJsonLd } from '@/lib/seo/json-ld';
 import { ArchitectureLayers } from './architecture-layers';
 import { Cajetin } from './cajetin';
 import { ContactSection } from './contact-section';
+import { EducationSection, educationColumns } from './education-section';
 import { EngagementProvider } from './engagement-provider';
 import { Hero } from './hero';
 import { buildHexPlane } from './hex-plane-section';
@@ -40,15 +41,18 @@ export function HomeView({ resume, architecture = null, services = [], projects 
   const { lang, page } = route;
   const dict = getDictionary(lang);
   const isProfile = page === 'profile';
-  const { profile, experience, education } = resume;
-  const hasTrajectory =
-    isProfile && experience.length + education.education.length + education.certificates.length + education.courses.length > 0;
+  const { profile, experience } = resume;
+  // Profile only: the jobs and the education columns (blank entries dropped) are separate sections, each one only with data.
+  const columns = isProfile ? educationColumns(resume.education, dict) : [];
+  const hasExperience = isProfile && experience.length > 0;
+  const hasEducation = columns.length > 0;
 
   // Section numbers follow the sections actually rendered, so they never skip.
   const hasServices = !isProfile && services.length > 0;
   const hasProcess = !isProfile && dict.process !== undefined;
   const numbered = [
-    hasTrajectory ? 'trajectory' : null,
+    hasExperience ? 'experience' : null,
+    hasEducation ? 'education' : null,
     isProfile ? 'architecture' : null,
     isProfile ? null : 'services',
     hasProcess ? 'process' : null,
@@ -68,7 +72,7 @@ export function HomeView({ resume, architecture = null, services = [], projects 
         profile={profile}
         route={route}
         dict={dict}
-        hasExperience={isProfile && experience.length > 0}
+        hasExperience={hasExperience}
         plane={buildHexPlane(architecture, dict)}
       >
         <Cajetin profile={profile} experience={experience} route={route} dict={dict} />
@@ -76,7 +80,8 @@ export function HomeView({ resume, architecture = null, services = [], projects 
       {isProfile ? (
         <>
           <ImpactBand items={resume.impact} label={dict.sections.impact} />
-          <Trajectory experience={experience} education={education} lang={lang} dict={dict} index={indexOf('trajectory')} />
+          <Trajectory experience={experience} lang={lang} dict={dict} index={indexOf('experience')} />
+          <EducationSection columns={columns} dict={dict} index={indexOf('education')} />
           <SectionShell id="architecture" labelledBy="architecture-title" alt>
             <SectionHead
               index={indexOf('architecture')}

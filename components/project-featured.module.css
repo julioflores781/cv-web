@@ -60,12 +60,6 @@
   border-bottom: 1px solid var(--line2);
 }
 
-.factKey {
-  margin-bottom: 2px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
 .factText {
   font-size: 15px;
 }

@@ -1,0 +1,53 @@
+/* Education: up to three columns (degree, certifications, courses), no timeline. Same auto-fit grid as the cajetin. */
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 32px;
+}
+
+.column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line2);
+}
+
+/* Like the period of the timeline. */
+.heading {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The scale of the hero's selection label. */
+.main {
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}

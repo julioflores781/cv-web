@@ -22,7 +22,8 @@ La idea (qué y por qué) vive en `progress/<slug>/brief.md`, escrita por el lea
 Referencias: `AGENTS.md` (mapa) · `docs/web-standards.md` (patrones) · `CHECKPOINTS.md` (definición de "listo").
 
 ## Qué es
-La web del CV y servicios de Julio Flores, publicada en `https://floreslab.dev` (ES por defecto, `/en`; perfil y servicios). Next.js como
+La web del CV y servicios de Julio Flores, publicada en `https://floreslab.dev` (ES por defecto, `/en`; Servicios en la portada `/` y `/en/`, Perfil en `/perfil/` y `/en/profile/`;
+`/servicios/` y `/en/services/` redirigen 308 a la portada). Next.js como
 **servidor standalone** (`output: 'standalone'`) pensado para correr en un contenedor del NAS, detrás del túnel, junto a la API del CV (repo `cv`, Quarkus) y su base de datos (imagen: `Dockerfile`; compose único para el NAS: `deploy/docker-compose.yml`).
 Cada render lee la API por la red interna (`CV_API_URL`, por defecto `http://cv-api:8080`), **sin caché ni respaldo**: el build no toca la API; si la API
 cae o responde algo inválido, la página da **500** (nunca datos viejos). Referencia visual vigente: `design/artifact-v2/project/Main.dc.html`.

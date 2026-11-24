@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { EMPTY_ARCHITECTURE, projectsEs, sampleImage, servicesEs } from '@/tests/fixtures/content';
 import { emptyListsResume, minimalResume, resumeEn, resumeEs } from '@/tests/fixtures/resume';
+import type { Resume } from '@/lib/api/types';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { HomeView } from './home-view';
 
@@ -16,6 +17,16 @@ function numbers(container: HTMLElement): string[] {
 }
 
 const hrefsOf = (container: HTMLElement) => Array.from(container.querySelectorAll('a[href^="#"]')).map((a) => a.getAttribute('href') as string);
+
+const NO_EDUCATION = { education: [], certificates: [], courses: [] };
+const PROFILE_NUMBERS = {
+  es: ['01 / trayectoria', '02 / formación', '03 / arquitectura', '04 / proyectos', '05 / contacto'],
+  en: ['01 / career', '02 / education', '03 / architecture', '04 / projects', '05 / contact'],
+};
+const SERVICES_NUMBERS = {
+  es: ['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto'],
+  en: ['01 / services', '02 / process', '03 / projects', '04 / contact'],
+};
 
 /** Every combination of empty services / projects / architecture. */
 const EMPTY_MATRIX = [false, true].flatMap((services) => [false, true].flatMap((projects) => [false, true].map((architecture) => ({ services, projects, architecture }))));
@@ -55,26 +66,17 @@ describe('HomeView', () => {
     }
   });
 
-  it('BA-T37: the section numbers are recalculated without gaps when a middle section is missing', () => {
-    const full = render(<HomeView resume={resumeEs} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
-    expect(numbers(full.container)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
-    full.unmount();
-    const withoutJobs = render(<HomeView resume={emptyListsResume()} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
-    expect(numbers(withoutJobs.container)).toEqual(['01 / arquitectura', '02 / proyectos', '03 / contacto']);
-    withoutJobs.unmount();
-    const services = render(<HomeView resume={resumeEn} route={{ lang: 'en', page: 'services' }} siteUrl={SITE} />);
-    expect(numbers(services.container)).toEqual(['01 / services', '02 / process', '03 / projects', '04 / contact']);
-  });
-
-  it('BA-A9: the profile has impact, career, architecture with stack and contact; services shows nothing of the profile', () => {
+  it('BA-A9: the profile has impact, career, education, architecture with stack and contact; services shows nothing of the profile', () => {
     const profile = render(<HomeView resume={resumeEs} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
     expect(profile.container.querySelectorAll('h1')).toHaveLength(1);
     expect(screen.getByRole('region', { name: 'Impacto' })).toBeInTheDocument();
     expect(profile.container.querySelector('#architecture')).not.toBeNull();
     expect(profile.container.textContent).toContain('Lenguaje Uno');
+    // Extended in web-trajectory-split: experience and education are two sections of the profile.
+    for (const present of ['#experience', '#education']) expect(profile.container.querySelector(present), present).not.toBeNull();
     profile.unmount();
     const services = render(<HomeView resume={resumeEs} route={{ lang: 'es', page: 'services' }} siteUrl={SITE} />);
-    for (const absent of ['#experience', '#architecture']) expect(services.container.querySelector(absent)).toBeNull();
+    for (const absent of ['#experience', '#education', '#architecture']) expect(services.container.querySelector(absent), absent).toBeNull();
     expect(services.container.textContent).not.toContain('Lenguaje Uno');
     expect(screen.queryByRole('region', { name: 'Impacto' })).toBeNull();
     expect(services.container.querySelector('#contact')).not.toBeNull();
@@ -102,7 +104,7 @@ describe('HomeView', () => {
     expect(container.querySelector('#services')).not.toBeNull();
     expect(container.querySelector('aside')).toBeNull();
     expect(container.querySelector('#projects')).not.toBeNull();
-    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('a[href^="#"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
+    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('[data-probe="navlinks"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
   });
 
   it('T43: the services page with services=[] has #services with its h2 and empty text, no cards, aside or selection, and the contact form', () => {
@@ -148,26 +150,6 @@ describe('HomeView', () => {
     }
   });
 
-  it('T47: with services, projects and architecture empty the numbering is consecutive: services 01-04, profile 01-04 (career only with data)', () => {
-    const all = { services: true, projects: true, architecture: true };
-    for (const lang of ['es', 'en'] as const) {
-      const services = renderEmpty(all, { lang, page: 'services' });
-      expect(numbers(services.container)).toEqual(
-        lang === 'es' ? ['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto'] : ['01 / services', '02 / process', '03 / projects', '04 / contact'],
-      );
-      services.unmount();
-      const profile = renderEmpty(all, { lang, page: 'profile' });
-      expect(numbers(profile.container)).toEqual(
-        lang === 'es' ? ['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto'] : ['01 / career', '02 / architecture', '03 / projects', '04 / contact'],
-      );
-      profile.unmount();
-    }
-    const noJobs = render(
-      <HomeView resume={emptyListsResume()} services={[]} projects={[]} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />,
-    );
-    expect(numbers(noJobs.container)).toEqual(['01 / arquitectura', '02 / proyectos', '03 / contacto']);
-  });
-
   it('T48: each empty state sits in a section named by its h2, with no alert or live region of its own, and a single h1', () => {
     for (const page of ['profile', 'services'] as const) {
       const { container, unmount } = renderEmpty({ services: true, projects: true, architecture: true }, { lang: 'es', page });
@@ -191,20 +173,100 @@ describe('HomeView', () => {
     expect(container.querySelector('[data-probe="selection-line"]')).toBeNull();
   });
 
-  it('CO-T81 (component level): sections are numbered by render order and absent ones renumber', () => {
-    const props = { resume: resumeEs, siteUrl: SITE };
-    const services = render(<HomeView {...props} services={servicesEs} projects={projectsEs} route={{ lang: 'es', page: 'services' }} />);
-    expect(numbers(services.container)).toEqual(['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto']);
+  it('TR-T14 (BA-T37, T47, CO-T81): the profile numbers 01 career · 02 education · 03 architecture · 04 projects · 05 contact in ES and EN, also with services, projects and architecture empty; services keeps 01-04', () => {
+    for (const empty of EMPTY_MATRIX) {
+      for (const lang of ['es', 'en'] as const) {
+        for (const page of ['profile', 'services'] as const) {
+          const { container, unmount } = renderEmpty(empty, { lang, page });
+          expect(numbers(container), JSON.stringify({ empty, lang, page })).toEqual(page === 'profile' ? PROFILE_NUMBERS[lang] : SERVICES_NUMBERS[lang]);
+          unmount();
+        }
+      }
+    }
+    // Kept from CO-T81: the services page with services has its aside and the nav keeps projects and contact; the profile has neither aside nor selection line.
+    const props = { resume: resumeEs, siteUrl: SITE, services: servicesEs, projects: projectsEs };
+    const services = render(<HomeView {...props} route={{ lang: 'es', page: 'services' }} />);
     expect(services.container.querySelector('aside')).not.toBeNull();
-    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('a[href^="#"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
+    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('[data-probe="navlinks"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
     services.unmount();
-    const profile = render(<HomeView {...props} services={servicesEs} projects={projectsEs} route={{ lang: 'es', page: 'profile' }} />);
-    expect(numbers(profile.container)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
-    expect(profile.container.querySelector('aside')).toBeNull();
-    expect(profile.container.querySelector('[data-probe="selection-line"]')).toBeNull();
-    profile.unmount();
-    const bare = render(<HomeView {...props} services={[]} projects={[]} route={{ lang: 'es', page: 'services' }} />);
-    expect(numbers(bare.container)).toEqual(['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto']);
+    const profile = render(<HomeView {...props} route={{ lang: 'es', page: 'profile' }} />);
+    expect(numbers(profile.container)).toEqual(PROFILE_NUMBERS.es);
+    expect(profile.container.querySelector('aside, [data-probe="selection-line"]')).toBeNull();
+  });
+
+  it('TR-T15: a missing experience or education renumbers the profile without gaps, and blank-only education is no section', () => {
+    const profile = (resume: Resume) => render(<HomeView resume={resume} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
+    const withoutJobs = profile({ ...resumeEs, experience: [] });
+    expect(numbers(withoutJobs.container)).toEqual(['01 / formación', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
+    expect(withoutJobs.container.querySelector('#experience')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ver trayectoria' })).toBeNull();
+    withoutJobs.unmount();
+
+    const withoutEducation = profile({ ...resumeEs, education: NO_EDUCATION });
+    expect(numbers(withoutEducation.container)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
+    expect(withoutEducation.container.querySelector('#education')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Ver trayectoria' })).toHaveAttribute('href', '#experience');
+    withoutEducation.unmount();
+
+    const empty = profile(emptyListsResume());
+    expect(numbers(empty.container)).toEqual(['01 / arquitectura', '02 / proyectos', '03 / contacto']);
+    empty.unmount();
+
+    const blank = profile({
+      ...resumeEs,
+      education: { education: [{ institution: ' ', studyType: ' ' }], certificates: [{ name: '  ', issuer: 'Entidad Ejemplo' }], courses: [{ name: '' }] },
+    });
+    expect(blank.container.querySelector('#education')).toBeNull();
+    expect(numbers(blank.container)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
+  });
+
+  it('TR-T16: the services page (ES and EN, resumeEs) has no #experience, #education, phases, achievements nor education, and keeps 01 services · 02 process · 03 projects · 04 contact', () => {
+    for (const lang of ['es', 'en'] as const) {
+      const dict = getDictionary(lang);
+      const { container, unmount } = render(<HomeView resume={resumeEs} services={servicesEs} projects={projectsEs} route={{ lang, page: 'services' }} siteUrl={SITE} />);
+      for (const absent of ['#experience', '#education', 'details', 'summary']) expect(container.querySelector(absent), `${lang} ${absent}`).toBeNull();
+      const text = container.textContent ?? '';
+      const [phase] = resumeEs.experience[0]?.phases ?? [];
+      const leaks = [
+        phase?.title as string,
+        ...resumeEs.experience.flatMap((job) => job.highlights),
+        'Ver logros',
+        'See achievements',
+        'Universidad Ejemplo',
+        'Certificado Ejemplo',
+        'Curso Ejemplo',
+        dict.sections.education.title,
+        dict.education.degrees,
+      ];
+      for (const leak of leaks) expect(text, `${lang} ${leak}`).not.toContain(leak);
+      expect(numbers(container), lang).toEqual(SERVICES_NUMBERS[lang]);
+      unmount();
+    }
+  });
+
+  it('TR-T17: the full profile has one h1, #experience and #education labelled by their h2, h3 for jobs and columns with no h4 nor skipped level, and every #anchor (also «Ver trayectoria») resolves', () => {
+    const { container } = render(<HomeView resume={resumeEs} services={servicesEs} projects={projectsEs} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
+    expect(container.querySelectorAll('h1')).toHaveLength(1);
+    for (const id of ['experience', 'education']) {
+      const section = container.querySelector(`section#${id}[aria-labelledby]`);
+      expect(section, id).not.toBeNull();
+      const h2 = section?.querySelector('h2');
+      expect(h2?.id, id).toBe(section?.getAttribute('aria-labelledby'));
+      expect(section?.querySelectorAll('h3').length, id).toBeGreaterThan(0);
+      expect(section?.querySelector('h4, h5, h6'), id).toBeNull();
+    }
+    expect(container.querySelectorAll('#experience h3')).toHaveLength(resumeEs.experience.length);
+    expect(container.querySelectorAll('#education h3')).toHaveLength(3);
+    const levels = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((heading) => Number(heading.tagName.slice(1)));
+    expect(levels[0]).toBe(1);
+    levels.forEach((level, i) => {
+      if (i > 0) expect(level, `heading ${i}`).toBeLessThanOrEqual((levels[i - 1] as number) + 1);
+    });
+    const cta = screen.getByRole('link', { name: 'Ver trayectoria' });
+    expect(cta).toHaveAttribute('href', '#experience');
+    const anchors = hrefsOf(container);
+    expect(anchors).toContain('#experience');
+    for (const href of anchors) expect(container.querySelector(href), href).not.toBeNull();
   });
 
   it('T415: HomeView and Projects take no projectImages / images map any more; the cover comes with each project, on both pages', () => {

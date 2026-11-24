@@ -20,6 +20,8 @@
 
 ## i18n
 Español en `/`, inglés en `/en`. Diccionarios en `lib/i18n`. Las dos rutas comparten componentes. `hreflang` y `lang` correctos.
+- Rutas (`lib/i18n/routes.ts`, única tabla): Servicios es la portada, `/` (ES) y `/en/` (EN); el Perfil vive en `/perfil/` (ES) y `/en/profile/` (EN). Cualquier otra ruta es 404 sin llamar a la API.
+- `/servicios/` y `/en/services/` (las URLs viejas de Servicios) redirigen **308** (`permanent: true` en `next.config.ts`) a `/` y `/en/`, con `Location` relativa y conservando la query; van antes que las páginas, así que no leen la API. Las dos reglas llevan barra final en `source` y `destination` (por `trailingSlash`): sin barra, `/servicios` llega en dos saltos 308.
 
 ## Diseño y accesibilidad
 Tokens por variables CSS. Contraste AA, foco visible, `prefers-reduced-motion`, un solo `h1` por página, landmarks, HTML semántico,
@@ -28,6 +30,8 @@ mobile-first (probar a 360 px y a escritorio).
 ## SEO
 `title`, `description`, Open Graph, `hreflang`, canonical y JSON-LD `Person` por idioma; `sitemap.xml` y `robots.txt`.
 Todas esas URLs salen de `SITE_URL` (por defecto `https://floreslab.dev`), leído en runtime: `app/sitemap.ts` y `app/robots.ts` son `force-dynamic` (salen `ƒ` en la tabla de rutas del build). No hay redirección entre hosts.
+- El sitemap lista exactamente `/`, `/perfil/`, `/en/` y `/en/profile/`, cada una con los alternates de su pareja; hreflang con `x-default` en español (`/` para Servicios, `/perfil/` para el Perfil). El JSON-LD `Person.url` apunta al Perfil del idioma.
+- Las únicas redirecciones de ruta son las dos 308 de i18n (`/servicios/` → `/`, `/en/services/` → `/en/`); las URLs viejas no están en el sitemap.
 
 ## Seguridad y privacidad
 Sin teléfono, documento ni fecha de nacimiento. Sin secretos en el repo; `CV_API_URL` es pública. Enlaces externos con `rel="noopener noreferrer"`. Panel: ver «Admin» (cookie `httpOnly`, CSRF, `X-Client-IP` sin `CF-*`, noindex).
@@ -40,7 +44,7 @@ Unitarios para `lib/`, de componente para UI (con fixtures ficticios «Ada Ejemp
 ## PDF del CV
 - `lib/pdf/` (`@react-pdf/renderer@4.9.0`, JS puro): `files.ts` (nombres/ruta, única fuente), `fonts.ts` (`.woff` de `@fontsource/*@5.3.0`, sin copias), `theme.ts` (= tokens «obra» de `globals.css`, con test), `cv-document.tsx` (A4, una columna, ATS), `build-cv-pdf.ts` (`getCvPdf`, memo en memoria por contenido), `response.ts`.
 - Rutas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Rutas dinámicas: cada petición consulta la API (`getResume`; si falla, 5xx aunque haya PDF en memoria). Caché en memoria acotada con clave por contenido (`lang + hash del CV`), `ETag` y `Cache-Control: no-cache`. Si el render falla: `null` + un WARN `pdf_render_failed` (`lib/log.ts`), la ruta responde 404 y el botón se omite.
-- Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en «02 / arquitectura» del Perfil y solo si hay PDF. Los PDF no van en el sitemap.
+- Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en la sección de arquitectura del Perfil (`#architecture`) y solo si hay PDF. Los PDF no van en el sitemap.
 - Gotcha: el PDF no usa IBM Plex Mono: el `.woff` de fontsource tiene el glifo de espacio roto para fontkit (falla al medir). Solo Barlow Condensed 700 e IBM Plex Sans 400/600.
 
 ## Paridad visual

@@ -11,7 +11,7 @@
 ## 2. Mapa (`app/`, `components/`, `lib/`)
 | Área | Rol |
 |------|-----|
-| `app/` | Rutas App Router (dinámicas, renderizadas por petición). `/` y `/servicios/` en español, `/en/` y `/en/services/` en inglés; `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
+| `app/` | Rutas App Router (dinámicas, renderizadas por petición). Servicios es la portada: `/` y `/perfil/` en español, `/en/` y `/en/profile/` en inglés; `/servicios/` y `/en/services/` redirigen (308) a `/` y `/en/` (`next.config.ts`); `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
 | `app/admin/` | Panel `/admin` (fase 3, solo español, noindex): login, dashboard, editores de servicios/proyectos/arquitectura, imágenes, historial, mensajes y ajustes (Server Components) + route handlers en `app/admin/api/` (únicas mutaciones). Ver «Admin» en `docs/web-standards.md`. |
 | `proxy.ts` | Puerta de `/admin` (solo presencia de la cookie; deja fuera `/admin/api/images`, decisión de Julio). La autoridad es la API. Sin logs por visita. |
 | `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. `components/admin/`: UI del panel (CSS Modules solo con tokens). |
@@ -45,3 +45,13 @@ idea → [leader: brief.md] → [analyst] → analysis.md → ⏸ HUMANO valida 
   → [closer] → rama + commit + merge a develop
 ```
 Detalle y tabla de escalado en `.claude/agents/leader.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

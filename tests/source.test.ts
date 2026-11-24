@@ -91,6 +91,35 @@ describe('source rules', () => {
     expect(existsSync(path.join(root, 'public', 'projects'))).toBe(false);
   });
 
+  it("TR-T27: the experience and education sections are plain server components: no 'use client', state, effects, click handlers nor fetch(", () => {
+    for (const file of ['components/trajectory.tsx', 'components/education-section.tsx']) {
+      const source = readFileSync(path.join(root, file), 'utf8');
+      expect(source, file).toContain('export function');
+      expect(source, file).not.toMatch(/['"]use client['"]|\buseState\b|\buseEffect\b|\bonClick\b|\bfetch\(/);
+    }
+  });
+
+  it('TR-T28: docs/web-standards.md no longer pins the PDF button to «02 / arquitectura»', () => {
+    const standards = readFileSync(path.join(root, 'docs', 'web-standards.md'), 'utf8');
+    expect(standards).toMatch(/^## PDF del CV/m);
+    expect(standards).not.toContain('02 / arquitectura');
+  });
+
+  it('HS-T29: AGENTS.md, CLAUDE.md and docs/web-standards.md describe the new routes (/perfil/, /en/profile/) and the 308s of /servicios/ and /en/services/', () => {
+    const doc = (...file: string[]) => readFileSync(path.join(root, ...file), 'utf8');
+    const agents = doc('AGENTS.md');
+    const claude = doc('CLAUDE.md');
+    const standards = doc('docs', 'web-standards.md');
+    for (const [name, text] of [['AGENTS.md', agents], ['CLAUDE.md', claude], ['docs/web-standards.md', standards]] as const) expect(text, name).toContain('`/perfil/`');
+    for (const [name, text] of [['AGENTS.md', agents], ['docs/web-standards.md', standards]] as const) {
+      expect(text, name).toContain('`/en/profile/`');
+      expect(text, name).toMatch(/`\/servicios\/` y `\/en\/services\/`[^\n]*redirigen[^\n]*308[^\n]*`\/` y `\/en\/`/);
+    }
+    const appRow = agents.split('\n').find((line) => line.startsWith('| `app/` |')) ?? '';
+    expect(appRow).toContain('`/perfil/`');
+    expect(appRow).not.toContain('`/` y `/servicios/` en español');
+  });
+
   it('T69: no debug logging call is left in the source', () => {
     const needle = ['console', 'log'].join('.');
     const offenders = all.filter((file) => readFileSync(file, 'utf8').includes(needle));

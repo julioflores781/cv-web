@@ -1,6 +1,17 @@
 # Estado de la sesión
 
-Tarea en curso: ninguna. Fase 3 (web-admin, 10 slugs) cerrada el 2026-11-14 y mergeada a `develop` (ver `progress/web-admin/close.md`). Pendiente: PR `develop -> main` (decide Julio), verificaciones tras desplegar y dos tareas en el repo `cv` (404 deducidos en el runbook, endurecer `dryRun`).
+Sin tarea en curso. **web-presence** cerrado el 2026-11-24 (Julio: «cierra todo y sube el commit y push al repo y que se publique la
+imagen»): `web-trajectory-split` (merge `11b933d`), `web-featured-facts` (`7b16090`), `web-home-services` (`18d6288`) y
+`web-service-cards` (`f1381db`), todos en `origin/develop`. En curso: commit de registro (`chore/cierre-web-presence`, con el bloque
+`nextjs-agent-rules` de `AGENTS.md` que Julio pidió commitear) y PR `develop → main`, que publica `julioflores781/cv-web` (Watchtower
+despliega `latest`; las 308 de `/servicios/` y `/en/services/` quedan en caché de los navegadores).
+La copia de trabajo está en `feature/nas-autodeploy` (= `develop`, sin commits propios). Sin commitear y fuera de todo slug:
+`deploy/docker-compose.yml` (Watchtower, de Julio).
+Pendiente (sugerencias, decide Julio): quitar la etiqueta «stack» repetida del proyecto destacado; acortar el curso largo de
+EducacionIT (contenido); `web-seo-presence` (og:image, JSON-LD `ProfessionalService`, Search Console); la cabecera a dos filas entre
+740 y 780 px se dejó así (HS-D7).
+
+Antes: fase 3 (web-admin, 10 slugs) cerrada el 2026-11-14 y mergeada a `develop` (ver `progress/web-admin/close.md`); llegó a `main` con el PR #3 (2026-11-14). Pendiente: verificaciones tras desplegar y dos tareas en el repo `cv` (404 deducidos en el runbook, endurecer `dryRun`).
 
 ## api-observability (logs, auditoría y request id; repos `cv` y `cv-web`)
 CERRADO (5/5 slugs: api-logging-core, api-audit-log, api-business-events, web-logging, ops-log-docs). `cv`: merge `c7e59a5` en develop; `cv-web`: commits `bb336fd`, `779fbfa` + merge en develop. Detalle y pasos de PR en `progress/api-observability/close.md`. PR `develop -> main` NO abiertos (en `cv` publicaría `cv-api`).

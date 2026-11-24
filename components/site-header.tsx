@@ -21,7 +21,8 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ route, name, links, dict }: SiteHeaderProps) {
-  const home = route.page === 'profile' ? '#inicio' : routePath({ lang: route.lang, page: 'profile' });
+  // The logo goes to the home page (services) of the language; on that page itself, to its top.
+  const home = route.page === 'services' ? '#inicio' : routePath({ lang: route.lang, page: 'services' });
   return (
     <header id="site-header" className={styles.header} data-probe="header">
       <HeaderOffset targetId="site-header" />

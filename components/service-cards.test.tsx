@@ -23,7 +23,7 @@ const aside = () => screen.getByRole('complementary');
 const cards = () => screen.getAllByRole('button');
 
 describe('ServiceCards', () => {
-  it('CO-T13: 2 services are 2 button aria-pressed with title (a span: a heading is not valid inside a button), summary, price and S-01 / S-02; the first is «incluido», the second «+ añadir»', () => {
+  it('SC-T1 (CO-T13): 2 services are 2 button aria-pressed with title (a span: a heading is not valid inside a button), summary, price and the mark (the first «incluido», the second «+ añadir»), and no S-NN label', () => {
     setup();
     expect(cards()).toHaveLength(2);
     const [first, second] = cards() as [HTMLElement, HTMLElement];
@@ -31,13 +31,20 @@ describe('ServiceCards', () => {
     expect(second).toHaveAttribute('aria-pressed', 'false');
     expect(first.querySelector('[data-probe="service-card-title"]')?.tagName).toBe('SPAN');
     expect(first).toHaveTextContent('Web de ejemplo');
-    expect(first).toHaveTextContent('S-01');
     expect(first).toHaveTextContent('incluido');
     expect(first).toHaveTextContent('Una web ficticia de principio a fin.');
     expect(first.textContent).toMatch(/desde 1500\s€ \+ impuestos/);
-    expect(second).toHaveTextContent('S-02');
     expect(second).toHaveTextContent('+ añadir');
     expect(second).toHaveTextContent('a consultar');
+    for (const card of [first, second]) {
+      expect(card.textContent).not.toMatch(/\bS-\d{2}\b/);
+      // Text node by text node too: the concatenated textContent glues a label to the mark («S-01incluido») and dodges the \b.
+      const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+      const texts: string[] = [];
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) texts.push(node.textContent ?? '');
+      expect(texts.length).toBeGreaterThan(0);
+      expect(texts.filter((text) => /\bS-\d{2}\b/.test(text))).toEqual([]);
+    }
   });
 
   it('CO-T83 (review r1, req. 2): one live region announces the selection change — the aside; the selection line carries none', () => {

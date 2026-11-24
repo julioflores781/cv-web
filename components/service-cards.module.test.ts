@@ -12,4 +12,10 @@ describe('service-cards.module.css', () => {
     expect(rule('.card')).toMatch(/min-height:\s*230px/);
     expect(rule('.card')).toMatch(/padding:\s*24px/);
   });
+
+  it('SC-T2: the top row keeps the mark at the right of the card with the S-NN label gone (flex-end, no space-between, no color of its own)', () => {
+    expect(rule('.top')).toMatch(/justify-content:\s*flex-end/);
+    expect(rule('.top')).not.toMatch(/space-between/);
+    expect(rule('.top')).not.toMatch(/(^|[\s;])color:/);
+  });
 });
