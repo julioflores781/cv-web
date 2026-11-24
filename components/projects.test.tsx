@@ -21,13 +21,20 @@ describe('Projects', () => {
     expect(cards(container).map((card) => card.querySelector('h3')?.textContent)).toEqual([employer.title, anonymous.title]);
   });
 
-  it('CO-T23: the public featured shows badge, role, facts from highlights, buttons from links (first primary) and the client', () => {
+  it('FF-T1 (CO-T23): the public featured shows badge, role, each fact as only its highlight text in API order (no h-NN label), buttons from links (first primary) and the client', () => {
+    expect(own.highlights.length).toBeGreaterThanOrEqual(2);
     const { container } = view([{ ...own, client: 'Cliente Ejemplo S.A.' }]);
     const box = featured(container);
     expect(box).toHaveTextContent('EN PRODUCCIÓN');
     expect(box).toHaveTextContent('web + app');
-    expect(Array.from(box.querySelectorAll('ul > li')).map((li) => li.textContent)).toContain('h-01Primer logro de ejemplo');
-    expect(box).toHaveTextContent('h-02');
+    const facts = Array.from(box.querySelectorAll('[data-probe="featured-facts"] > li'));
+    expect(facts.map((li) => li.textContent)).toEqual(own.highlights);
+    // Text node by text node: the concatenated textContent would glue a label to its fact («h-01Primer…») and dodge the \b.
+    const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+    const texts: string[] = [];
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) texts.push(node.textContent ?? '');
+    expect(texts.length).toBeGreaterThan(0);
+    expect(texts.filter((text) => /\bh-\d{2}\b/.test(text))).toEqual([]);
     const links = Array.from(box.querySelectorAll('a'));
     expect(links.map((a) => a.textContent)).toEqual(['Abrir ejemplo', 'Ver demo']);
     expect(links[0]?.className).not.toBe(links[1]?.className);
