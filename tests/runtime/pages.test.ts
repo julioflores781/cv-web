@@ -7,7 +7,7 @@ import { resumeEn, resumeEs } from '@/tests/fixtures/resume';
 import { dictionaries } from '@/lib/i18n/dictionaries';
 import { SENTINELS, startFakeApi } from '@/tests/helpers/fake-api';
 import { type TestServer } from '@/tests/helpers/http-server';
-import { PAGES, assetUrls, eyebrows, get, getRsc, render, type Rendered } from '@/tests/helpers/runtime-pages';
+import { PAGES, assetUrls, eyebrows, get, getRsc, render, type Mode, type Rendered } from '@/tests/helpers/runtime-pages';
 import { TEST_SITE, startStandalone, type StandaloneServer } from '@/tests/helpers/standalone';
 
 const resumeOf = (lang: 'es' | 'en') => (lang === 'es' ? resumeEs : resumeEn);
@@ -127,7 +127,7 @@ describe('runtime pages', () => {
     expect(offenders).toEqual([]);
   });
 
-  it("T32: the plane with Ada's ports and a noscript per port, the services and projects, and the section numbering", () => {
+  it("TR-T26 (T32): the plane with Ada's ports and a noscript per port, the services and projects, and the section numbering by (mode, lang)", () => {
     for (const spec of PAGES) {
       const { text, doc, visible } = page(spec.path);
       const architecture = architectureFor(spec.lang);
@@ -157,10 +157,14 @@ describe('runtime pages', () => {
         expect(doc.querySelector('aside'), spec.path).toBeNull();
       }
     }
-    expect(eyebrows(page('/servicios/').doc)).toEqual(['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto']);
-    expect(eyebrows(page('/en/services/').doc)).toEqual(['01 / services', '02 / process', '03 / projects', '04 / contact']);
-    expect(eyebrows(page('/').doc)).toEqual(['01 / trayectoria', '02 / arquitectura', '03 / proyectos', '04 / contacto']);
-    expect(eyebrows(page('/en/').doc)).toEqual(['01 / career', '02 / architecture', '03 / projects', '04 / contact']);
+    // Indexed by (mode, lang), never by path, so moving the routes does not touch this table.
+    const expected: Record<`${Mode}|${'es' | 'en'}`, string[]> = {
+      'profile|es': ['01 / trayectoria', '02 / formación', '03 / arquitectura', '04 / proyectos', '05 / contacto'],
+      'profile|en': ['01 / career', '02 / education', '03 / architecture', '04 / projects', '05 / contact'],
+      'services|es': ['01 / servicios', '02 / proceso', '03 / proyectos', '04 / contacto'],
+      'services|en': ['01 / services', '02 / process', '03 / projects', '04 / contact'],
+    };
+    for (const spec of PAGES) expect(eyebrows(page(spec.path).doc), spec.path).toEqual(expected[`${spec.mode}|${spec.lang}`]);
   });
 
   it('T33: external links are noopener noreferrer, every #anchor has its id, fonts come from /_next/static/media, no Google Fonts, the favicon answers 200 and no placeholder is left', async () => {

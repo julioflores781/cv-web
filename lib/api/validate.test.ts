@@ -48,3 +48,39 @@ describe('parseResume', () => {
     expect(text).not.toContain('X-0000');
   });
 });
+
+describe('parseResume: phases and highlights', () => {
+  /** resumeEs with its first job replaced by `job` (built over the original one). */
+  const withFirstJob = (job: (original: Record<string, unknown>) => Record<string, unknown>) => {
+    const [first, ...rest] = resumeEs.experience;
+    return { ...resumeEs, experience: [job({ ...first }), ...rest] };
+  };
+  const omit = (job: Record<string, unknown>, key: string) => {
+    const copy = { ...job };
+    delete copy[key];
+    return copy;
+  };
+
+  it('TR-T21: a phase without title, a numeric client, phases absent or not a list, a numeric highlight or highlights absent → null; client null or absent is accepted; unknown fields in a phase or a job are dropped', () => {
+    const invalid: Record<string, unknown> = {
+      'phase without title': withFirstJob((job) => ({ ...job, phases: [{ client: 'Cliente Ejemplo' }] })),
+      'numeric client': withFirstJob((job) => ({ ...job, phases: [{ title: 'Fase uno', client: 7 }] })),
+      'phases absent': withFirstJob((job) => omit(job, 'phases')),
+      'phases as an object': withFirstJob((job) => ({ ...job, phases: {} })),
+      'numeric highlight': withFirstJob((job) => ({ ...job, highlights: ['Logro ficticio', 3] })),
+      'highlights absent': withFirstJob((job) => omit(job, 'highlights')),
+    };
+    for (const [name, raw] of Object.entries(invalid)) expect(parseResume(raw), name).toBeNull();
+
+    const nullClient = parseResume(withFirstJob((job) => ({ ...job, phases: [{ title: 'Fase uno', client: null }] })));
+    expect(nullClient?.experience[0]?.phases).toEqual([{ title: 'Fase uno', client: null }]);
+    const noClient = parseResume(withFirstJob((job) => ({ ...job, phases: [{ title: 'Fase uno' }] })));
+    expect(noClient?.experience[0]?.phases).toEqual([{ title: 'Fase uno' }]);
+
+    const dirty = parseResume(withFirstJob((job) => ({ ...job, dni: 'SENTINEL-DNI-0000', phases: [{ title: 'Fase uno', client: 'Cliente Ejemplo', phone: '+00-SENTINEL-0000' }] })));
+    expect(dirty).toEqual(resumeEs);
+    const text = JSON.stringify(dirty);
+    expect(text).not.toContain('SENTINEL');
+    expect(text).not.toMatch(/"(?:dni|phone)"/);
+  });
+});

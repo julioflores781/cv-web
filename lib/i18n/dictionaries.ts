@@ -34,6 +34,7 @@ export interface Dictionary {
   sections: {
     impact: string;
     trajectory: { label: string; title: string };
+    education: { label: string; title: string };
     architecture: { label: string; title: string; intro: string };
     services: { label: string; title: string; intro: string };
     projects: { label: string; title: string; intro: string };
@@ -84,7 +85,10 @@ export interface Dictionary {
       fallback: string;
     };
   };
-  education: { education: string; certificate: string; course: string };
+  /** Column headings of the education section (plural) and the singular kinds the PDF prints before each certificate and course. */
+  education: { degrees: string; certificates: string; courses: string; certificate: string; course: string };
+  /** Disclosure of a job's achievements; `{count}` is the number of achievements. */
+  experience: { achievements: string };
   layers: { label: string; adapters: Layer; ports: Layer; domain: Layer };
   stack: { label: string };
   /** Shown inside a section whose list came back empty from the API (not an error). */
@@ -137,6 +141,7 @@ const es: Dictionary = {
   sections: {
     impact: 'Impacto',
     trajectory: { label: 'trayectoria', title: 'Una trayectoria en sistemas donde la fiabilidad importa.' },
+    education: { label: 'formación', title: 'Formación' },
     architecture: {
       label: 'arquitectura',
       title: 'Cómo pienso un sistema.',
@@ -207,7 +212,8 @@ const es: Dictionary = {
       fallback: 'También puedes escribirme a {email}.',
     },
   },
-  education: { education: 'Formación', certificate: 'Certificado', course: 'Curso' },
+  education: { degrees: 'Titulación', certificates: 'Certificaciones', courses: 'Cursos', certificate: 'Certificado', course: 'Curso' },
+  experience: { achievements: 'Ver logros ({count})' },
   layers: {
     label: 'Capas de la arquitectura',
     adapters: {
@@ -284,6 +290,7 @@ const en: Dictionary = {
   sections: {
     impact: 'Impact',
     trajectory: { label: 'career', title: 'A career in systems where reliability matters.' },
+    education: { label: 'education', title: 'Education' },
     architecture: {
       label: 'architecture',
       title: 'How I think about a system.',
@@ -354,7 +361,8 @@ const en: Dictionary = {
       fallback: 'You can also write to me at {email}.',
     },
   },
-  education: { education: 'Education', certificate: 'Certificate', course: 'Course' },
+  education: { degrees: 'Degree', certificates: 'Certifications', courses: 'Courses', certificate: 'Certificate', course: 'Course' },
+  experience: { achievements: 'See achievements ({count})' },
   layers: {
     label: 'Architecture layers',
     adapters: {

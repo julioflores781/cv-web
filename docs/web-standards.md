@@ -40,7 +40,7 @@ Unitarios para `lib/`, de componente para UI (con fixtures ficticios «Ada Ejemp
 ## PDF del CV
 - `lib/pdf/` (`@react-pdf/renderer@4.9.0`, JS puro): `files.ts` (nombres/ruta, única fuente), `fonts.ts` (`.woff` de `@fontsource/*@5.3.0`, sin copias), `theme.ts` (= tokens «obra» de `globals.css`, con test), `cv-document.tsx` (A4, una columna, ATS), `build-cv-pdf.ts` (`getCvPdf`, memo en memoria por contenido), `response.ts`.
 - Rutas `app/cv-julio-flores-{es,en}.pdf/route.ts`. Rutas dinámicas: cada petición consulta la API (`getResume`; si falla, 5xx aunque haya PDF en memoria). Caché en memoria acotada con clave por contenido (`lang + hash del CV`), `ETag` y `Cache-Control: no-cache`. Si el render falla: `null` + un WARN `pdf_render_failed` (`lib/log.ts`), la ruta responde 404 y el botón se omite.
-- Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en «02 / arquitectura» del Perfil y solo si hay PDF. Los PDF no van en el sitemap.
+- Solo email + LinkedIn + GitHub (`lib/contact-links.ts`). El botón vive en la sección de arquitectura del Perfil (`#architecture`) y solo si hay PDF. Los PDF no van en el sitemap.
 - Gotcha: el PDF no usa IBM Plex Mono: el `.woff` de fontsource tiene el glifo de espacio roto para fontkit (falla al medir). Solo Barlow Condensed 700 e IBM Plex Sans 400/600.
 
 ## Paridad visual
