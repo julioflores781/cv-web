@@ -39,7 +39,6 @@ export function ProjectFeatured({ project, lang, dict }: ProjectFeaturedProps) {
           <ul className={styles.facts} data-probe="featured-facts">
             {project.highlights.map((fact, i) => (
               <li key={`${i}|${fact}`} className={styles.fact}>
-                <p className={`${styles.factKey} mono`}>{`h-${String(i + 1).padStart(2, '0')}`}</p>
                 <p className={styles.factText}>{fact}</p>
               </li>
             ))}
