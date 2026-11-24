@@ -276,15 +276,16 @@ function withServices(lang: 'es' | 'en' = 'es') {
     </EngagementProvider>
   );
 }
-const pick = (title: string) => fireEvent.click(screen.getByRole('button', { name: new RegExp(title) }));
+const pick = (title: string) =>
+  fireEvent.click(screen.getByText(title, { selector: '[data-probe="service-card-title"]' }).closest('button') as HTMLElement);
 
 describe('selection to form', () => {
   it('CO-T35: with 2 services marked the line reads «selección → A + B»; with none «sin bloques marcados»; the profile has no line', () => {
     render(withServices());
-    pick('^S-02');
+    pick('B');
     expect(screen.getByText('selección → A + B')).toBeInTheDocument();
-    pick('^S-01');
-    pick('^S-02');
+    pick('A');
+    pick('B');
     expect(screen.getByText('sin bloques marcados')).toBeInTheDocument();
     const profile = render(<ContactSection contact={resumeEs.contact} route={{ lang: 'es', page: 'profile' }} dict={es} index={4} />);
     expect(profile.container.querySelector('[data-probe="selection-line"]')).toBeNull();
@@ -293,7 +294,7 @@ describe('selection to form', () => {
   it('CO-T36: with {A, B} and a text the body message is «Servicios de interés: A + B\\n\\ntext» (EN «Services of interest: …»)', async () => {
     const mock = stubFetch(created);
     const view = render(withServices());
-    pick('^S-02');
+    pick('B');
     fill('Quiero una web de ejemplo');
     submit();
     await waitFor(() => expect(mock).toHaveBeenCalledTimes(1));
@@ -301,7 +302,7 @@ describe('selection to form', () => {
     view.unmount();
     const mockEn = stubFetch(created);
     render(withServices('en'));
-    pick('^S-02');
+    pick('B');
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Ada' } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: EMAIL } });
     fireEvent.change(screen.getByLabelText(/^Tell me/), { target: { value: 'I want an example site' } });
@@ -313,7 +314,7 @@ describe('selection to form', () => {
   it('CO-T37: without a selection the message sent is just the text', async () => {
     const mock = stubFetch(created);
     render(withServices());
-    pick('^S-01');
+    pick('A');
     fill('Solo el texto de ejemplo');
     submit();
     await waitFor(() => expect(mock).toHaveBeenCalledTimes(1));
@@ -360,9 +361,9 @@ describe('selection to form', () => {
   it('CO-T40: marking and unmarking services keeps what was typed in the textarea', () => {
     render(withServices());
     fireEvent.change(message(), { target: { value: 'Texto a medias' } });
-    pick('^S-02');
-    pick('^S-03');
-    pick('^S-01');
+    pick('B');
+    pick('C');
+    pick('A');
     expect(message().value).toBe('Texto a medias');
   });
 });
