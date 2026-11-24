@@ -119,7 +119,7 @@ const es: Dictionary = {
   skip: 'Saltar al contenido',
   header: { navLabel: 'Principal', langLabel: 'Idioma', modeLabel: 'Modo de la web' },
   nav: { projects: 'proyectos', contact: 'contacto' },
-  mode: { profile: 'Perfil', services: 'Servicios' },
+  mode: { profile: 'Perfil / CV', services: 'Servicios' },
   hero: {
     profile: { h1: 'Construyo el núcleo que hace que todo funcione.', cta: 'Escríbeme', trajectoryCta: 'Ver trayectoria' },
     services: {
@@ -136,7 +136,7 @@ const es: Dictionary = {
     since: 'En activo desde',
     location: 'Ubicación',
     sheet: 'Hoja',
-    sheets: { profile: '01 / 02 · Perfil', services: '02 / 02 · Servicios' },
+    sheets: { profile: '02 / 02 · Perfil', services: '01 / 02 · Servicios' },
   },
   sections: {
     impact: 'Impacto',
@@ -268,7 +268,7 @@ const en: Dictionary = {
   skip: 'Skip to content',
   header: { navLabel: 'Main', langLabel: 'Language', modeLabel: 'Site mode' },
   nav: { projects: 'projects', contact: 'contact' },
-  mode: { profile: 'Profile', services: 'Services' },
+  mode: { profile: 'Profile / CV', services: 'Services' },
   hero: {
     profile: { h1: 'I build the core that makes everything work.', cta: 'Get in touch', trajectoryCta: 'See career' },
     services: {
@@ -285,7 +285,7 @@ const en: Dictionary = {
     since: 'Active since',
     location: 'Location',
     sheet: 'Sheet',
-    sheets: { profile: '01 / 02 · Profile', services: '02 / 02 · Services' },
+    sheets: { profile: '02 / 02 · Profile', services: '01 / 02 · Services' },
   },
   sections: {
     impact: 'Impact',

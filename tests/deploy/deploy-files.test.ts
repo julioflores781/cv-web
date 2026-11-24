@@ -241,6 +241,16 @@ describe('ci workflow: docker job', () => {
     expect(smoke).not.toMatch(/DESIGN_ADMIN_PASSWORD|-e (?!CV_API_URL|SITE_URL)[A-Z_]+=/);
   });
 
+  it('HS-T28: the smoke asks /perfil/ for an h1 and checks that /servicios/ and /en/services/ are 308s to / and /en/, with no new variables', () => {
+    const smoke = block(job, /^ {6}- name: Smoke test the container/);
+    expect(smoke).toContain(`curl -fsS http://localhost:3000/perfil/ | grep -q '<h1'`);
+    expect(smoke).toContain(`[ "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost:3000/servicios/)" = '308 http://localhost:3000/' ]`);
+    expect(smoke).toContain(`[ "$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' http://localhost:3000/en/services/)" = '308 http://localhost:3000/en/' ]`);
+    // Same fake API and the same two variables as before (T426).
+    expect(smoke).not.toMatch(/DESIGN_ADMIN_PASSWORD|-e (?!CV_API_URL|SITE_URL)[A-Z_]+=/);
+    expect([...smoke.matchAll(/-e ([A-Z_]+)=/g)].map((match) => match[1])).toEqual(['CV_API_URL', 'SITE_URL']);
+  });
+
   it('T99 (file check): the smoke stops the container with SIGTERM, accepts exit 0 or 143 and requires < 10 s', () => {
     expect(job).toMatch(/docker stop -t 10 cv-web/);
     expect(job).toMatch(/\[ "\$code" = 0 \] \|\| \[ "\$code" = 143 \]/);

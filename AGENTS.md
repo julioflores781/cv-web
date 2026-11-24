@@ -11,7 +11,7 @@
 ## 2. Mapa (`app/`, `components/`, `lib/`)
 | Área | Rol |
 |------|-----|
-| `app/` | Rutas App Router (dinámicas, renderizadas por petición). `/` y `/servicios/` en español, `/en/` y `/en/services/` en inglés; `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
+| `app/` | Rutas App Router (dinámicas, renderizadas por petición). Servicios es la portada: `/` y `/perfil/` en español, `/en/` y `/en/profile/` en inglés; `/servicios/` y `/en/services/` redirigen (308) a `/` y `/en/` (`next.config.ts`); `sitemap.xml`, `robots.txt`, `/api/health`, `/api/contact` y los PDF del CV. |
 | `app/admin/` | Panel `/admin` (fase 3, solo español, noindex): login, dashboard, editores de servicios/proyectos/arquitectura, imágenes, historial, mensajes y ajustes (Server Components) + route handlers en `app/admin/api/` (únicas mutaciones). Ver «Admin» en `docs/web-standards.md`. |
 | `proxy.ts` | Puerta de `/admin` (solo presencia de la cookie; deja fuera `/admin/api/images`, decisión de Julio). La autoridad es la API. Sin logs por visita. |
 | `components/` | UI reutilizable (hero, impacto, experiencia, skills, contacto). Sin lógica de datos. `components/admin/`: UI del panel (CSS Modules solo con tokens). |

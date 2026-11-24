@@ -7,7 +7,7 @@ interface ModeToggleProps {
   dict: Dictionary;
 }
 
-/** Profile / Services switch: links between the two pages, styled as the design's segmented control. */
+/** Services / Profile switch (in the order of `PAGES`): links between the two pages, styled as the design's segmented control. */
 export function ModeToggle({ route, dict }: ModeToggleProps) {
   return (
     <div className={styles.group} role="group" aria-label={dict.header.modeLabel} data-probe="toggle">
