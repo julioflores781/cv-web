@@ -17,31 +17,31 @@ function cells(profile: Profile, experience: Experience[], route: Route): Record
 const profileRoute = { lang: 'es', page: 'profile' } as const;
 
 describe('Cajetin', () => {
-  it('BA-T27: a full profile has 5 cells: author, specialty (tagline), active since (earliest year), location and sheet', () => {
+  it('HS-T12 (BA-T27, BA-T28, BA-T29): services is sheet «01 / 02 · Servicios» and the profile «02 / 02 · Perfil» (EN: Sheet … · Services / Profile); the other cells do not change', () => {
+    // BA-T27: a full profile has 5 cells: author, specialty (tagline), active since (earliest year), location and sheet.
     expect(cells(resumeEs.profile, resumeEs.experience, profileRoute)).toEqual({
       Autor: 'Ada Ejemplo',
       Especialidad: resumeEs.profile.tagline,
       'En activo desde': '2010',
       Ubicación: 'Ciudad Ejemplo, España',
-      Hoja: '01 / 02 · Perfil',
+      Hoja: '02 / 02 · Perfil',
     });
-  });
-
-  it('BA-T28: without tagline, experience or city only those cells are omitted, and the specialty falls back to the label', () => {
+    // BA-T28: without tagline, experience or city only those cells are omitted, and the specialty falls back to the label.
     const profile = { ...resumeEs.profile, tagline: null, city: null, countryCode: null };
     expect(cells(profile, [], profileRoute)).toEqual({
       Autor: 'Ada Ejemplo',
       Especialidad: resumeEs.profile.label,
-      Hoja: '01 / 02 · Perfil',
+      Hoja: '02 / 02 · Perfil',
     });
     const onlyCity = { ...resumeEs.profile, countryCode: 'XX' };
     expect(cells(onlyCity, resumeEs.experience, profileRoute).Ubicación).toBe('Ciudad Ejemplo');
-  });
-
-  it('BA-T29: the services page is sheet «02 / 02 · Servicios» (EN: Sheet 02 / 02 · Services)', () => {
-    expect(cells(resumeEs.profile, resumeEs.experience, { lang: 'es', page: 'services' }).Hoja).toBe('02 / 02 · Servicios');
-    const english = cells(resumeEn.profile, resumeEn.experience, { lang: 'en', page: 'services' });
-    expect(english.Sheet).toBe('02 / 02 · Services');
-    expect(english.Location).toBe('Example City, Spain');
+    // BA-T29: the sheet of each page, in both languages, with the same other cells.
+    const servicesEs = cells(resumeEs.profile, resumeEs.experience, { lang: 'es', page: 'services' });
+    expect(servicesEs).toEqual({ ...cells(resumeEs.profile, resumeEs.experience, profileRoute), Hoja: '01 / 02 · Servicios' });
+    const servicesEn = cells(resumeEn.profile, resumeEn.experience, { lang: 'en', page: 'services' });
+    expect(servicesEn.Sheet).toBe('01 / 02 · Services');
+    expect(servicesEn.Location).toBe('Example City, Spain');
+    const profileEn = cells(resumeEn.profile, resumeEn.experience, { lang: 'en', page: 'profile' });
+    expect(profileEn).toEqual({ ...servicesEn, Sheet: '02 / 02 · Profile' });
   });
 });

@@ -72,12 +72,15 @@ describe('runtime CV PDF', () => {
     }
   });
 
-  it('T59: only the profile links the PDF of its language, and neither sitemap.xml nor robots.txt lists a PDF', async () => {
+  it('HS-T22 (T59): only /perfil/ and /en/profile/ link the PDF of their language (the services pages / and /en/, none), and neither sitemap.xml nor robots.txt lists a PDF', async () => {
+    const linked: Record<string, string[]> = {};
     for (const spec of PAGES) {
       const { doc } = await render(server, spec);
-      const hrefs = [...doc.querySelectorAll('a[href$=".pdf"]')].map((a) => a.getAttribute('href'));
+      const hrefs = [...doc.querySelectorAll('a[href$=".pdf"]')].map((a) => a.getAttribute('href') as string);
       expect(hrefs, spec.path).toEqual(spec.mode === 'profile' ? [FILES[spec.lang]] : []);
+      linked[spec.path] = hrefs;
     }
+    expect(linked).toEqual({ '/': [], '/perfil/': [FILES.es], '/en/': [], '/en/profile/': [FILES.en] });
     for (const file of ['/sitemap.xml', '/robots.txt']) expect((await get(server, file)).text, file).not.toMatch(/\.pdf/);
   });
 

@@ -105,6 +105,21 @@ describe('source rules', () => {
     expect(standards).not.toContain('02 / arquitectura');
   });
 
+  it('HS-T29: AGENTS.md, CLAUDE.md and docs/web-standards.md describe the new routes (/perfil/, /en/profile/) and the 308s of /servicios/ and /en/services/', () => {
+    const doc = (...file: string[]) => readFileSync(path.join(root, ...file), 'utf8');
+    const agents = doc('AGENTS.md');
+    const claude = doc('CLAUDE.md');
+    const standards = doc('docs', 'web-standards.md');
+    for (const [name, text] of [['AGENTS.md', agents], ['CLAUDE.md', claude], ['docs/web-standards.md', standards]] as const) expect(text, name).toContain('`/perfil/`');
+    for (const [name, text] of [['AGENTS.md', agents], ['docs/web-standards.md', standards]] as const) {
+      expect(text, name).toContain('`/en/profile/`');
+      expect(text, name).toMatch(/`\/servicios\/` y `\/en\/services\/`[^\n]*redirigen[^\n]*308[^\n]*`\/` y `\/en\/`/);
+    }
+    const appRow = agents.split('\n').find((line) => line.startsWith('| `app/` |')) ?? '';
+    expect(appRow).toContain('`/perfil/`');
+    expect(appRow).not.toContain('`/` y `/servicios/` en español');
+  });
+
   it('T69: no debug logging call is left in the source', () => {
     const needle = ['console', 'log'].join('.');
     const offenders = all.filter((file) => readFileSync(file, 'utf8').includes(needle));

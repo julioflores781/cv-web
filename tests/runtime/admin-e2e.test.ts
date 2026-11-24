@@ -49,8 +49,8 @@ describe('admin end to end (standalone + fake admin API)', () => {
       body: { baseVersions: { es: 1, en: 1 }, comment: 'Precio revisado', documents: { es: service('Servicio renovado'), en: service('Renewed service') } },
     });
     expect(saved.status).toBe(200);
-    expect((await send(runtime, '/servicios/')).text).toContain('Servicio renovado');
-    expect((await send(runtime, '/en/services/')).text).toContain('Renewed service');
+    expect((await send(runtime, '/')).text).toContain('Servicio renovado');
+    expect((await send(runtime, '/en/')).text).toContain('Renewed service');
 
     // 2) Projects: no cover before; upload an image and attach it (own + public); the public page shows it as the cover.
     expect(covers((await send(runtime, '/')).text)).toEqual([]);
@@ -86,7 +86,7 @@ describe('admin end to end (standalone + fake admin API)', () => {
     expect(covers((await send(runtime, '/en/')).text)).toEqual([]);
     expect(runtime.api.admin?.state.images.size).toBe(1);
     // Services were not touched by the projects rollback.
-    expect((await send(runtime, '/servicios/')).text).toContain('Servicio renovado');
+    expect((await send(runtime, '/')).text).toContain('Servicio renovado');
 
     // 4) «Cerrar todas las sesiones»: the old token is dead for handlers (401 JSON, cookie dropped) and pages (to the login, remembering the page).
     expect((await send(runtime, '/admin/api/logout-all/', { method: 'POST', cookie: token, body: {} })).status).toBe(200);

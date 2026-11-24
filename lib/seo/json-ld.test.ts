@@ -7,23 +7,26 @@ import { buildPersonJsonLd, serializeJsonLd } from './json-ld';
 const SITE = 'https://cv.example.test';
 
 describe('buildPersonJsonLd', () => {
-  it('T87: with the default siteUrl, the Person url starts with https://floreslab.dev', () => {
+  it('HS-T14 (T87, BA-T7 T33): Person.url is the profile of the language (SITE/perfil/, SITE/en/profile/), with the public fields only and no email, telephone, birthDate nor taxID', () => {
     const { siteUrl } = getConfig({});
-    expect(buildPersonJsonLd(resumeEs, 'es', siteUrl).url).toBe('https://floreslab.dev/');
-    expect(buildPersonJsonLd(resumeEn, 'en', siteUrl).url).toBe('https://floreslab.dev/en/');
-  });
-
-  it('BA-T7 (T33): has @type Person, name, jobTitle, url, sameAs and inLanguage', () => {
+    expect(buildPersonJsonLd(resumeEs, 'es', siteUrl).url).toBe('https://floreslab.dev/perfil/');
+    expect(buildPersonJsonLd(resumeEn, 'en', siteUrl).url).toBe('https://floreslab.dev/en/profile/');
+    expect(buildPersonJsonLd(resumeEs, 'es', SITE).url).toBe(`${SITE}/perfil/`);
     const ld = buildPersonJsonLd(resumeEn, 'en', SITE);
     expect(ld).toMatchObject({
       '@context': 'https://schema.org',
       '@type': 'Person',
       name: 'Ada Ejemplo',
       jobTitle: resumeEn.profile.label,
-      url: `${SITE}/en/`,
+      url: `${SITE}/en/profile/`,
       inLanguage: 'en',
     });
     expect(ld.sameAs).toEqual(['https://www.linkedin.com/in/ada-ejemplo', 'https://github.com/ada-ejemplo']);
+    for (const [resume, lang] of [[resumeEs, 'es'], [resumeEn, 'en']] as const) {
+      const out = serializeJsonLd(buildPersonJsonLd(resume, lang, SITE));
+      expect(out, lang).not.toMatch(/telephone|birthDate|taxID/);
+      expect(out, lang).not.toContain(resume.contact.email);
+    }
   });
 
   it('BA-T7 (T34): a name containing </script> cannot close the script tag', () => {

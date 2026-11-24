@@ -18,7 +18,7 @@ describe('admin history (standalone + fake admin API)', () => {
       body: { baseVersions: { es: 1, en: 1 }, comment, documents: { es: service('Servicio renovado'), en: service('Renewed service') } },
     });
     expect(saved.status).toBe(200);
-    expect((await send(runtime, '/servicios/')).text).toContain('Servicio renovado');
+    expect((await send(runtime, '/')).text).toContain('Servicio renovado');
 
     const page = await send(runtime, '/admin/history/services/?lang=es', { cookie: token });
     expect(page.status).toBe(200);
@@ -34,8 +34,8 @@ describe('admin history (standalone + fake admin API)', () => {
       expect(restored.status, lang).toBe(200);
       expect(restored.headers.get('cache-control')).toBe('no-store');
     }
-    const es = await send(runtime, '/servicios/');
-    const en = await send(runtime, '/en/services/');
+    const es = await send(runtime, '/');
+    const en = await send(runtime, '/en/');
     expect(es.text).toContain('Servicio de ejemplo');
     expect(es.text).not.toContain('Servicio renovado');
     expect(en.text).toContain('Sample service');
@@ -44,7 +44,7 @@ describe('admin history (standalone + fake admin API)', () => {
     // The history keeps both versions: a second rollback with the old base is a 409 and v2 can be reactivated.
     expect((await send(runtime, '/admin/api/content/services/es/rollback/', { method: 'POST', cookie: token, body: { baseVersion: 2, targetVersion: 2 } })).status).toBe(409);
     expect((await send(runtime, '/admin/api/content/services/es/rollback/', { method: 'POST', cookie: token, body: { baseVersion: 1, targetVersion: 2 } })).status).toBe(200);
-    expect((await send(runtime, '/servicios/')).text).toContain('Servicio renovado');
+    expect((await send(runtime, '/')).text).toContain('Servicio renovado');
 
     const log = runtime.server.log();
     const events = log

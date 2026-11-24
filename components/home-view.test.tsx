@@ -104,7 +104,7 @@ describe('HomeView', () => {
     expect(container.querySelector('#services')).not.toBeNull();
     expect(container.querySelector('aside')).toBeNull();
     expect(container.querySelector('#projects')).not.toBeNull();
-    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('a[href^="#"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
+    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('[data-probe="navlinks"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
   });
 
   it('T43: the services page with services=[] has #services with its h2 and empty text, no cards, aside or selection, and the contact form', () => {
@@ -187,7 +187,7 @@ describe('HomeView', () => {
     const props = { resume: resumeEs, siteUrl: SITE, services: servicesEs, projects: projectsEs };
     const services = render(<HomeView {...props} route={{ lang: 'es', page: 'services' }} />);
     expect(services.container.querySelector('aside')).not.toBeNull();
-    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('a[href^="#"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
+    expect(Array.from(screen.getByRole('navigation', { name: 'Principal' }).querySelectorAll('[data-probe="navlinks"]')).map((a) => a.getAttribute('href'))).toEqual(['#projects', '#contact']);
     services.unmount();
     const profile = render(<HomeView {...props} route={{ lang: 'es', page: 'profile' }} />);
     expect(numbers(profile.container)).toEqual(PROFILE_NUMBERS.es);

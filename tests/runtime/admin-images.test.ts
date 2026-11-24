@@ -202,7 +202,7 @@ describe('admin images (standalone with proxy.ts + fake admin API)', () => {
     };
     const saved = await send(runtime, '/admin/api/content/services/', { method: 'PUT', cookie: token, body: { baseVersions: { es: 0, en: 0 }, documents } });
     expect(saved.status).toBe(200);
-    expect((await send(runtime, '/servicios/')).text).toContain('Servicio de ejemplo');
+    expect((await send(runtime, '/')).text).toContain('Servicio de ejemplo');
   }, 120_000);
 
   it('T391: after uploading, the log has admin_image_upload with outcome and bytes only, never the file name nor its content', async () => {

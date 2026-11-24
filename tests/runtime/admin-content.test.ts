@@ -18,10 +18,10 @@ const docs = (es: string, en: string, summary = 'Resumen ficticio del panel') =>
 const save = (runtime: AdminRuntime, token: string, body: unknown) => send(runtime, '/admin/api/content/services/', { method: 'PUT', cookie: token, body });
 
 describe('admin content (standalone + fake admin API)', () => {
-  it('T339: a service edited through the handlers shows at once on /servicios/ and /en/services/, with no rebuild', async () => {
+  it('T339: a service edited through the handlers shows at once on / and /en/ (the services pages), with no rebuild', async () => {
     const runtime = await bootAdmin({ admin: { seed: SEED } });
     const token = await loginToken(runtime);
-    const before = await send(runtime, '/servicios/');
+    const before = await send(runtime, '/');
     expect(before.text).toContain('Servicio de ejemplo');
     const current = await send(runtime, '/admin/api/content/services/', { cookie: token });
     expect(current.status).toBe(200);
@@ -29,8 +29,8 @@ describe('admin content (standalone + fake admin API)', () => {
     const saved = await save(runtime, token, { baseVersions: { es: versions.es.version, en: versions.en.version }, comment: 'Precio nuevo', documents: docs('Servicio renovado', 'Renewed service') });
     expect(saved.status).toBe(200);
     expect(saved.headers.get('cache-control')).toBe('no-store');
-    const es = await send(runtime, '/servicios/');
-    const en = await send(runtime, '/en/services/');
+    const es = await send(runtime, '/');
+    const en = await send(runtime, '/en/');
     expect(es.text).toContain('Servicio renovado');
     expect(es.text).not.toContain('Servicio de ejemplo');
     expect(en.text).toContain('Renewed service');
@@ -51,7 +51,7 @@ describe('admin content (standalone + fake admin API)', () => {
     expect(body.code).toBe('CONTENT_VERSION_CONFLICT');
     expect(body.latest.languages.es.version).toBe(2);
     expect(body.latest.languages.es.content.services[0]?.title).toBe('Cambio de la otra sesión');
-    const page = await send(runtime, '/servicios/');
+    const page = await send(runtime, '/');
     expect(page.text).toContain('Cambio de la otra sesión');
     expect(page.text).not.toContain('Mi cambio');
   }, 120_000);

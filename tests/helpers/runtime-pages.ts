@@ -10,11 +10,18 @@ export interface PageSpec {
   canonical: string;
 }
 
+/** The 4 public pages: services is the home page of each language, the profile lives in /perfil/ and /en/profile/. */
 export const PAGES: PageSpec[] = [
-  { path: '/', lang: 'es', mode: 'profile', canonical: `${TEST_SITE}/` },
-  { path: '/servicios/', lang: 'es', mode: 'services', canonical: `${TEST_SITE}/servicios/` },
-  { path: '/en/', lang: 'en', mode: 'profile', canonical: `${TEST_SITE}/en/` },
-  { path: '/en/services/', lang: 'en', mode: 'services', canonical: `${TEST_SITE}/en/services/` },
+  { path: '/', lang: 'es', mode: 'services', canonical: `${TEST_SITE}/` },
+  { path: '/perfil/', lang: 'es', mode: 'profile', canonical: `${TEST_SITE}/perfil/` },
+  { path: '/en/', lang: 'en', mode: 'services', canonical: `${TEST_SITE}/en/` },
+  { path: '/en/profile/', lang: 'en', mode: 'profile', canonical: `${TEST_SITE}/en/profile/` },
+];
+
+/** The old services URLs, answered with a permanent 308 to the services page of their language (`next.config.ts`). */
+export const OLD_SERVICES: Array<{ path: string; location: string }> = [
+  { path: '/servicios/', location: '/' },
+  { path: '/en/services/', location: '/en/' },
 ];
 
 export interface Fetched {

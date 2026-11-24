@@ -38,18 +38,33 @@ function expectNoInternals(body: string, ...internals: string[]): void {
 }
 
 describe('runtime resilience (no cache between requests)', () => {
-  it('T35: when the API changes a service between two requests, the second response shows it and the log has 2 requests per resource', async () => {
+  it('HS-T24 (T35, T40): / shows a service changed between two requests (2 requests per resource) and turns 500 without Ada once the API is a 503; with the API down from the start, /perfil/ is a 500 and /servicios/ still answers its 308 to /', async () => {
     let title = servicesEs[0]?.title as string;
     const { api, server, override } = await scenario();
     override((resource) => (resource === 'services' ? { status: 200, body: servicesEs.map((s, i) => (i === 0 ? { ...s, title } : s)) } : undefined));
-    const first = await get(server, '/servicios/');
+    const first = await get(server, '/');
+    expect(first.status).toBe(200);
     expect(first.text).toContain(title);
     title = 'Servicio cambiado de ejemplo';
-    const second = await get(server, '/servicios/');
+    const second = await get(server, '/');
     expect(second.status).toBe(200);
     expect(second.text).toContain('Servicio cambiado de ejemplo');
     for (const resource of ['resume', 'architecture', 'services', 'projects']) expect(requestsFor(api, resource), resource).toHaveLength(2);
-  }, 60_000);
+    override(() => ({ status: 503, body: problem(503) }));
+    const failed = await get(server, '/');
+    expect(failed.status).toBe(500);
+    expect(failed.text).not.toContain('Ada Ejemplo');
+
+    const down = await closedPortUrl();
+    const { server: orphan } = await scenario(down);
+    const profile = await get(orphan, '/perfil/');
+    expect(profile.status).toBe(500);
+    expect(profile.text).not.toContain('Ada Ejemplo');
+    expectNoInternals(profile.text, down, new URL(down).host);
+    const redirect = await get(orphan, '/servicios/');
+    expect(redirect.status).toBe(308);
+    expect(redirect.headers.get('location')).toBe('/');
+  }, 90_000);
 
   it('T37: with the API down from the start the page is a 500 that leaks no internals, and the log carries the api_call and render_error lines', async () => {
     const down = await closedPortUrl();
@@ -76,14 +91,5 @@ describe('runtime resilience (no cache between requests)', () => {
     expect((await get(server, '/')).status).toBe(500);
     override(undefined);
     expect((await get(server, '/')).status).toBe(200);
-  }, 60_000);
-
-  it('T40: a page that just answered 200 becomes a 500 when the API turns 503 (no stale data)', async () => {
-    const { server, override } = await scenario();
-    expect((await get(server, '/servicios/')).status).toBe(200);
-    override(() => ({ status: 503, body: problem(503) }));
-    const result = await get(server, '/servicios/');
-    expect(result.status).toBe(500);
-    expect(result.text).not.toContain('Ada Ejemplo');
   }, 60_000);
 });
