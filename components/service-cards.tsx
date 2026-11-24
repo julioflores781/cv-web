@@ -34,7 +34,6 @@ export function ServiceCards({ services, lang, labels }: ServiceCardsProps) {
             data-probe="service-card"
           >
             <span className={`${styles.top} mono`}>
-              <span>{`S-${String(i + 1).padStart(2, '0')}`}</span>
               <span className={on ? styles.tagOn : styles.tagOff}>{on ? labels.included : labels.add}</span>
             </span>
             <span className={`${styles.title} display`} data-probe="service-card-title">
