@@ -28,6 +28,11 @@ export function formatPeriod(period: PeriodLike, lang: Lang): string {
   return `${start}${DASH}${end}`;
 }
 
+/** Joins the non-blank parts (trimmed) with `separator`, so a missing part never leaves a dangling separator. */
+export function clean(parts: Array<string | null | undefined>, separator: string): string {
+  return parts.map((part) => part?.trim()).filter(Boolean).join(separator);
+}
+
 /** Initials for the logo mark: first letter of the first and last word, "—" when there is no name. */
 export function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);

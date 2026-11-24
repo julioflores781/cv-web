@@ -32,6 +32,15 @@ describe('Download CV button (Cta in the architecture section)', () => {
     expect(section?.innerHTML).not.toContain('data-probe="download-cv"');
   });
 
+  it('TR-T29: with the education section in between, the download link stays inside #architecture, now numbered «03 / arquitectura»', () => {
+    const { container } = render(<HomeView resume={resumeEs} pdfHref={cvPdfHref('es')} route={{ lang: 'es', page: 'profile' }} siteUrl={SITE} />);
+    const link = screen.getByRole('link', { name: 'Descargar CV (PDF)' });
+    const architecture = link.closest('section');
+    expect(architecture?.id).toBe('architecture');
+    expect(architecture?.querySelector('p')?.textContent).toBe('03 / arquitectura');
+    expect(container.querySelector('#education [data-probe="download-cv"], #experience [data-probe="download-cv"]')).toBeNull();
+  });
+
   it('PD-T20: the services view never has the button, even if a PDF exists', () => {
     render(<HomeView resume={resumeEs} pdfHref="/cv-julio-flores-es.pdf" route={{ lang: 'es', page: 'services' }} siteUrl={SITE} />);
     expect(screen.queryByRole('link', { name: /CV \(PDF\)/ })).toBeNull();

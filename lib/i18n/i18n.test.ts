@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { LANGS } from './config';
 import { dictionaries } from './dictionaries';
-import { earliestYear, formatCountry, formatPeriod, initials } from './format';
+import { earliestYear, formatCountry, formatPeriod, initials, interpolate } from './format';
 
 function flatten(value: unknown, prefix = ''): Array<[string, unknown]> {
   if (typeof value === 'object' && value !== null) {
@@ -37,6 +37,27 @@ describe('dictionaries', () => {
       }
     }
     for (const key of ['services', 'projects', 'architecture'] as const) expect(dictionaries.en.empty[key]).not.toBe(dictionaries.es.empty[key]);
+    const keys = (lang: 'es' | 'en') => flatten(dictionaries[lang]).map(([key]) => key).sort();
+    expect(keys('es')).toEqual(keys('en'));
+  });
+
+  it('TR-T20: ES and EN have sections.education, the education column headings and kinds, and experience.achievements with {count}; education.education is gone', () => {
+    const expected = {
+      es: { section: { label: 'formación', title: 'Formación' }, columns: ['Titulación', 'Certificaciones', 'Cursos'], kinds: ['Certificado', 'Curso'], achievements: 'Ver logros (3)' },
+      en: { section: { label: 'education', title: 'Education' }, columns: ['Degree', 'Certifications', 'Courses'], kinds: ['Certificate', 'Course'], achievements: 'See achievements (3)' },
+    } as const;
+    for (const lang of LANGS) {
+      const dict = dictionaries[lang];
+      const want = expected[lang];
+      expect(dict.sections.education, lang).toEqual(want.section);
+      expect([dict.education.degrees, dict.education.certificates, dict.education.courses], lang).toEqual(want.columns);
+      expect([dict.education.certificate, dict.education.course], lang).toEqual(want.kinds);
+      expect(dict.experience.achievements, lang).toContain('{count}');
+      expect(interpolate(dict.experience.achievements, { count: '3' }), lang).toBe(want.achievements);
+      expect(Object.keys(dict.education).sort(), lang).toEqual(['certificate', 'certificates', 'course', 'courses', 'degrees']);
+      expect(dict.education, lang).not.toHaveProperty('education');
+    }
+    // BA-T42 still holds for the new keys: same keys in both languages.
     const keys = (lang: 'es' | 'en') => flatten(dictionaries[lang]).map(([key]) => key).sort();
     expect(keys('es')).toEqual(keys('en'));
   });
